@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Folder Structure Viewer</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+
+    h1 {
+      margin-bottom: 5px;
+    }
+
+    input {
+      margin: 15px 0;
+    }
+
+    #output {
+      background: #fff;
+      padding: 15px;
+      border-radius: 6px;
+      max-width: 700px;
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 20px;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    .folder {
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .folder::before {
+      content: "📁 ";
+    }
+
+    .file::before {
+      content: "📄 ";
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📁 Folder Structure Viewer</h1>
+  <p>Pilih folder untuk melihat strukturnya</p>
+
+  <input type="file" id="folderInput" webkitdirectory multiple />
+
+  <div id="output"></div>
+
+  <script>
+    const input = document.getElementById("folderInput");
+    const output = document.getElementById("output");
+
+    input.addEventListener("change", () => {
+      output.innerHTML = "";
+      const files = Array.from(input.files);
+      const tree = {};
+
+      // Bangun struktur tree
+      files.forEach(file => {
+        const parts = file.webkitRelativePath.split("/");
+        let current = tree;
+
+        parts.forEach((part, index) => {
+          if (!current[part]) {
+            current[part] = index === parts.length - 1 ? null : {};
+          }
+          current = current[part];
+        });
+      });
+
+      // Render ke HTML
+      output.appendChild(buildTree(tree));
+    });
+
+    function buildTree(obj) {
+      const ul = document.createElement("ul");
+
+      for (const key in obj) {
+        const li = document.createElement("li");
+
+        if (obj[key] === null) {
+          li.textContent = key;
+          li.className = "file";
+        } else {
+          li.textContent = key;
+          li.className = "folder";
+
+          const childUl = buildTree(obj[key]);
+          childUl.classList.add("hidden");
+
+          li.addEventListener("click", (e) => {
+            e.stopPropagation();
+            childUl.classList.toggle("hidden");
+          });
+
+          li.appendChild(childUl);
+        }
+
+        ul.appendChild(li);
+      }
+
+      return ul;
+    }
+  </script>
+
+</body>
+</html>
