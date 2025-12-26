@@ -1,39 +1,149 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Folder Structure Viewer</title>
 
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: system-ui, Arial, sans-serif;
       padding: 20px;
-      background: #f4f4f4;
+      background: #f5f5f5;
     }
 
     h1 {
-      margin-bottom: 5px;
+      margin-bottom: 4px;
     }
 
-    input {
-      margin: 15px 0;
+    input, button {
+      margin: 10px 0;
+    }
+
+    button {
+      padding: 6px 12px;
+      cursor: pointer;
     }
 
     #output {
-      background: #fff;
+      background: #ffffff;
       padding: 15px;
       border-radius: 6px;
-      max-width: 700px;
+      max-width: 800px;
+      font-family: monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      white-space: pre;
     }
 
     ul {
       list-style: none;
       padding-left: 20px;
+      margin: 0;
     }
 
     li {
-      margin: 4px 0;
+      margin: 2px 0;
     }
+
+    .folder::before {
+      content: "📁 ";
+    }
+
+    .file::before {
+      content: "📄 ";
+    }
+  </style>
+</head>
+<body>
+
+<h1>📁 Folder Structure Viewer</h1>
+<p>Pilih folder untuk melihat struktur lengkapnya</p>
+
+<input type="file" id="folderInput" webkitdirectory multiple>
+<br>
+<button onclick="copyTree()">📋 Copy Structure</button>
+
+<div id="output"></div>
+
+<script>
+  const input = document.getElementById("folderInput");
+  const output = document.getElementById("output");
+  let textTree = "";
+
+  input.addEventListener("change", () => {
+    output.innerHTML = "";
+    textTree = "";
+
+    const files = Array.from(input.files);
+    const tree = {};
+
+    // Build tree object
+    files.forEach(file => {
+      const parts = file.webkitRelativePath.split("/");
+      let current = tree;
+
+      parts.forEach((part, i) => {
+        if (!current[part]) {
+          current[part] = i === parts.length - 1 ? null : {};
+        }
+        current = current[part];
+      });
+    });
+
+    // Render visual tree
+    output.appendChild(renderTree(tree));
+    // Build text tree
+    buildTextTree(tree);
+    output.textContent += "\n\n" + textTree;
+  });
+
+  function renderTree(obj) {
+    const ul = document.createElement("ul");
+
+    for (const key in obj) {
+      const li = document.createElement("li");
+
+      if (obj[key] === null) {
+        li.textContent = key;
+        li.className = "file";
+      } else {
+        li.textContent = key;
+        li.className = "folder";
+        li.appendChild(renderTree(obj[key]));
+      }
+
+      ul.appendChild(li);
+    }
+
+    return ul;
+  }
+
+  function buildTextTree(obj, prefix = "") {
+    const keys = Object.keys(obj);
+
+    keys.forEach((key, index) => {
+      const isLast = index === keys.length - 1;
+      const connector = isLast ? "└── " : "├── ";
+
+      textTree += prefix + connector + key + "\n";
+
+      if (obj[key] !== null) {
+        const newPrefix = prefix + (isLast ? "    " : "│   ");
+        buildTextTree(obj[key], newPrefix);
+      }
+    });
+  }
+
+  function copyTree() {
+    if (!textTree) return alert("Belum ada struktur untuk disalin.");
+
+    navigator.clipboard.writeText(textTree);
+    alert("Struktur folder berhasil di-copy!");
+  }
+</script>
+
+</body>
+</html>
 
     .folder {
       font-weight: bold;
