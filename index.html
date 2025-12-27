@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ProjectTree Ultimate</title>
+<title>ProjectTree Ultimate v2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
@@ -28,9 +28,10 @@
     color: var(--text);
     padding: 2rem 1rem;
     line-height: 1.5;
+    min-height: 100vh; /* Agar bisa drop di mana saja */
   }
 
-  .container { max-width: 1100px; margin: 0 auto; }
+  .container { max-width: 1100px; margin: 0 auto; position: relative; }
 
   /* --- HEADER --- */
   header { margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
@@ -38,7 +39,7 @@
   .brand h1 { font-size: 1.5rem; font-weight: 700; color: #0f172a; }
   .brand-icon { width: 32px; height: 32px; color: var(--primary); }
 
-  /* --- CONTROLS --- */
+  /* --- CARD --- */
   .card {
     background: var(--surface);
     border-radius: 12px;
@@ -46,8 +47,39 @@
     border: 1px solid var(--border);
     overflow: hidden;
     margin-bottom: 1.5rem;
+    position: relative; /* Untuk loading overlay */
+    min-height: 300px;
   }
 
+  /* --- LOADING OVERLAY --- */
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(2px);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .loading-overlay.active { opacity: 1; pointer-events: all; }
+
+  .spinner {
+    width: 48px; height: 48px;
+    border: 4px solid #e2e8f0;
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 1rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-weight: 600; color: var(--text); }
+
+  /* --- TOOLBAR --- */
   .toolbar {
     padding: 1.25rem;
     border-bottom: 1px solid var(--border);
@@ -88,15 +120,18 @@
   .drop-zone {
     border: 2px dashed #cbd5e1;
     border-radius: 8px;
-    padding: 2.5rem;
+    padding: 3rem;
     text-align: center;
     background: white;
-    margin: 1.25rem;
+    margin: 1.5rem;
     transition: all 0.2s;
     cursor: pointer;
     color: var(--text-muted);
   }
-  .drop-zone:hover, .drop-zone.drag { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
+  /* Global Drag State (on Body) */
+  body.drag-active .drop-zone { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
+  body.drag-active .card { border-color: var(--primary); }
+  
   .drop-zone-icon { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.5; }
 
   /* --- TREE VIEW (DOM) --- */
@@ -107,52 +142,33 @@
     font-family: "Fira Code", Consolas, monospace;
     font-size: 14px;
     overflow-x: auto;
-    min-height: 300px;
-    position: relative;
+    min-height: 400px;
+    display: none; /* Hidden by default */
   }
+  .tree-container.show { display: block; }
 
-  /* Tree Nodes */
+  /* Tree Nodes Styling (Sama seperti sebelumnya) */
   .t-node { display: block; }
-  .t-head {
-    display: flex; align-items: center;
-    padding: 2px 0;
-    cursor: pointer;
-    user-select: none;
-  }
+  .t-head { display: flex; align-items: center; padding: 2px 0; cursor: pointer; user-select: none; }
   .t-head:hover { background: rgba(255,255,255,0.05); }
-  
-  /* Indentation lines */
   .indent { display: inline-block; width: 24px; height: 100%; border-right: 1px solid transparent; flex-shrink: 0; }
   .indent.line { border-right-color: var(--line-color); }
-
-  /* Icons */
   .t-icon { width: 18px; height: 18px; margin-right: 8px; flex-shrink: 0; }
   .t-arrow { width: 14px; height: 14px; margin-right: 4px; transition: transform 0.2s; color: var(--text-muted); }
   .t-node.collapsed .t-arrow { transform: rotate(-90deg); }
   .t-arrow.hidden { visibility: hidden; }
-
-  /* Content */
   .t-name { margin-right: 12px; }
   .t-meta { font-size: 12px; color: #64748b; margin-right: 12px; }
-  
-  /* Annotations (Editable) */
-  .t-comment {
-    color: #059669; font-style: italic; opacity: 0.7;
-    border-bottom: 1px dashed transparent; min-width: 20px;
-  }
+  .t-comment { color: #059669; font-style: italic; opacity: 0.7; border-bottom: 1px dashed transparent; min-width: 20px; }
   .t-comment:hover, .t-comment:focus { opacity: 1; border-bottom-color: #059669; }
   .t-comment:empty::before { content: "# click to add comment"; color: #475569; }
   .t-comment:focus::before { content: ""; }
-
-  /* Colors */
   .c-folder { color: #fcd34d; }
   .c-js { color: #f59e0b; } .c-ts { color: #3b82f6; }
   .c-html { color: #ef4444; } .c-css { color: #06b6d4; }
   .c-json { color: #84cc16; } .c-md { color: #a855f7; }
   .c-img { color: #10b981; } .c-def { color: #94a3b8; }
-
-  /* Collapsing logic */
-  .t-children { margin-left: 0; }
+  .t-children { margin-left: 0; padding-left: 22px; border-left: 1px solid var(--line-color); margin-left: 9px; }
   .t-node.collapsed .t-children { display: none; }
 
   /* Toast */
@@ -176,17 +192,23 @@
   <header>
     <div class="brand">
       <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
-      <h1>ProjectTree <span style="font-weight:300; font-size:1rem; color:var(--text-muted)">Ultimate</span></h1>
+      <h1>ProjectTree</h1>
     </div>
     <div class="group">
-      <button class="btn" onclick="window.open('https://github.com', '_blank')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        Help
+      <button class="btn" onclick="window.location.reload()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Reset
       </button>
     </div>
   </header>
 
   <div class="card">
+    <div id="loading" class="loading-overlay">
+      <div class="spinner"></div>
+      <div class="loading-text">Processing files...</div>
+      <div id="loadingCount" style="font-size:0.8rem; color:#64748b; margin-top:5px">Please wait</div>
+    </div>
+
     <div class="toolbar">
       <div class="group">
         <label for="pick" class="btn btn-primary">
@@ -205,17 +227,11 @@
       </div>
 
       <div class="group" style="margin-left:auto">
-        <button id="btnJson" class="btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-          JSON
-        </button>
-        <button id="btnImg" class="btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          PNG Image
-        </button>
+        <button id="btnJson" class="btn">JSON</button>
+        <button id="btnImg" class="btn">PNG Image</button>
       </div>
       
-      <div style="width:100%; height:10px"></div> <div class="group" style="width:100%">
+      <div style="width:100%; margin-top:10px" class="group">
         <input id="inpIgnore" type="text" placeholder="Ignore (e.g. node_modules, .git)" style="flex:2" />
         <input id="inpExt" type="text" placeholder="Filter Ext (e.g. .js, .py)" style="flex:1" />
       </div>
@@ -223,15 +239,11 @@
 
     <div id="dropZone" class="drop-zone">
       <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-      <div>Drag & Drop folder here to visualize</div>
-      <div style="font-size:0.8rem; margin-top:0.5rem">Supports large projects automatically</div>
+      <div style="font-weight:600; color:var(--text)">Drag & Drop folder here</div>
+      <div style="font-size:0.8rem; margin-top:0.5rem">or drop anywhere on the page to update</div>
     </div>
 
-    <div id="treeContainer" class="tree-container">
-      <div style="color:var(--text-muted); text-align:center; padding-top:2rem">
-        Structure will appear here...
-      </div>
-    </div>
+    <div id="treeContainer" class="tree-container"></div>
   </div>
 </div>
 
@@ -243,7 +255,7 @@
 </div>
 
 <script>
-/* ================== ICONS (SVG STRINGS) ================== */
+/* ================== ICONS ================== */
 const ICONS = {
   arrow: `<svg class="t-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>`,
   folder: `<svg class="t-icon c-folder" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`,
@@ -254,10 +266,7 @@ const ICONS = {
 const DEFAULT_IGNORE = new Set(["node_modules",".git",".vscode",".idea","dist","build","__pycache__",".DS_Store"]);
 
 /* ================== STATE ================== */
-let fileStructure = {}; // Root object storing the whole tree data
-let rootDirName = "root";
-
-/* ================== ELEMENTS ================== */
+let fileStructure = {}; 
 const els = {
   pick: document.getElementById('pick'),
   drop: document.getElementById('dropZone'),
@@ -265,86 +274,102 @@ const els = {
   ignore: document.getElementById('inpIgnore'),
   ext: document.getElementById('inpExt'),
   toast: document.getElementById('toast'),
-  selStyle: document.getElementById('selStyle')
+  selStyle: document.getElementById('selStyle'),
+  loading: document.getElementById('loading'),
+  loadingCount: document.getElementById('loadingCount')
 };
 
 // Load Prefs
 els.ignore.value = localStorage.getItem('pt_ignore') || "";
 els.ext.value = localStorage.getItem('pt_ext') || "";
 
-/* ================== MAIN LOGIC ================== */
+/* ================== CORE LOGIC ================== */
 
-// 1. Process Files
 async function processFiles(files) {
   if (!files.length) return;
+
+  // 1. SHOW LOADING & RESET UI
+  els.loading.classList.add('active');
+  els.loadingCount.textContent = `Analyzing ${files.length} files...`;
   
-  els.tree.innerHTML = '<div style="text-align:center">Processing...</div>';
-  
-  // Prepare filters
-  const manualIgnore = els.ignore.value.split(',').map(s=>s.trim()).filter(Boolean);
-  const ignoreSet = new Set([...DEFAULT_IGNORE, ...manualIgnore]);
-  const allowedExts = els.ext.value.split(',').map(s=>s.trim()).filter(Boolean);
+  // Use setTimeout to allow UI to update (spinner to appear) before heavy processing
+  await new Promise(r => setTimeout(r, 50));
 
-  // Check .gitignore
-  const gitignore = files.find(f => f.name === ".gitignore");
-  if(gitignore) {
-    try {
-      const txt = await gitignore.text();
-      txt.split(/\r?\n/).forEach(l => {
-        l = l.trim(); 
-        if(l && !l.startsWith('#')) ignoreSet.add(l.replace(/\/$/,''));
-      });
-    } catch(e){}
-  }
+  try {
+    // 2. RESET STATE (Otomatis Timpa)
+    fileStructure = {}; 
+    els.tree.innerHTML = ''; 
+    els.drop.style.display = 'none'; // Hide dropzone
+    els.tree.classList.add('show');  // Show tree container
 
-  // Build Data Structure
-  const root = { name: "root", type: "folder", children: {}, size: 0, count: 0 };
-  
-  // First pass: Construct Object
-  for (const f of files) {
-    const path = f.webkitRelativePath;
-    const parts = path.split('/');
-    
-    // Ignore Check
-    if (parts.some(p => ignoreSet.has(p))) continue;
-    // Extension Check
-    if (allowedExts.length && !allowedExts.some(e => f.name.endsWith(e))) continue;
+    // Prepare filters
+    const manualIgnore = els.ignore.value.split(',').map(s=>s.trim()).filter(Boolean);
+    const ignoreSet = new Set([...DEFAULT_IGNORE, ...manualIgnore]);
+    const allowedExts = els.ext.value.split(',').map(s=>s.trim()).filter(Boolean);
 
-    // Determine Root Name (first part of first file usually)
-    if (rootDirName === "root" && parts.length > 0) rootDirName = parts[0];
-
-    let curr = root;
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      const isFile = (i === parts.length - 1);
-      
-      if (!curr.children[part]) {
-        curr.children[part] = {
-          name: part,
-          type: isFile ? "file" : "folder",
-          children: {},
-          size: isFile ? f.size : 0,
-          count: 0
-        };
-      }
-      curr = curr.children[part];
+    // Check .gitignore
+    const gitignore = files.find(f => f.name === ".gitignore");
+    if(gitignore) {
+      try {
+        const txt = await gitignore.text();
+        txt.split(/\r?\n/).forEach(l => {
+          l = l.trim(); 
+          if(l && !l.startsWith('#')) ignoreSet.add(l.replace(/\/$/,''));
+        });
+      } catch(e){}
     }
+
+    // Build Data Structure
+    const root = { name: "root", type: "folder", children: {}, size: 0, count: 0 };
+    
+    // BUILD LOOP
+    for (const f of files) {
+      const parts = f.webkitRelativePath.split('/');
+      if (parts.some(p => ignoreSet.has(p))) continue;
+      if (allowedExts.length && !allowedExts.some(e => f.name.endsWith(e))) continue;
+
+      let curr = root;
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        const isFile = (i === parts.length - 1);
+        if (!curr.children[part]) {
+          curr.children[part] = {
+            name: part,
+            type: isFile ? "file" : "folder",
+            children: {},
+            size: isFile ? f.size : 0,
+            count: 0
+          };
+        }
+        curr = curr.children[part];
+      }
+    }
+
+    // CALC & SORT
+    calcStats(root);
+    sortChildren(root);
+
+    // RENDER
+    fileStructure = root.children[Object.keys(root.children)[0]]; // Un-nest
+    
+    if(!fileStructure) {
+      // Case: Folder empty or all ignored
+      els.tree.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-muted)">No files found (check filters)</div>';
+    } else {
+      renderTree(fileStructure);
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Error processing files");
+  } finally {
+    // 3. HIDE LOADING
+    els.loading.classList.remove('active');
   }
-
-  // Second pass: Calculate Directory Sizes recursively
-  calcStats(root);
-  
-  // Sort children
-  sortChildren(root);
-
-  // Assign to global & Render
-  fileStructure = root.children[Object.keys(root.children)[0]]; // Un-nest the wrapper
-  renderTree(fileStructure);
-  
-  els.drop.style.display = 'none'; // Hide dropzone after load
 }
 
-// Helper: Calculate Stats
+// ... (Helper functions remain similar but optimized) ...
+
 function calcStats(node) {
   if (node.type === "file") return;
   let sumSize = 0;
@@ -353,239 +378,158 @@ function calcStats(node) {
     const child = node.children[key];
     calcStats(child);
     sumSize += child.size;
-    sumCount += (child.type === 'file' ? 1 : child.count); // Count items
+    sumCount += (child.type === 'file' ? 1 : child.count);
   }
   node.size = sumSize;
   node.count = Object.keys(node.children).length;
 }
 
-// Helper: Sort
 function sortChildren(node) {
   if (node.type === 'file') return;
   const sortedKeys = Object.keys(node.children).sort((a,b) => {
     const nA = node.children[a], nB = node.children[b];
-    if (nA.type !== nB.type) return nA.type === 'folder' ? -1 : 1; // Folder first
+    if (nA.type !== nB.type) return nA.type === 'folder' ? -1 : 1;
     return a.localeCompare(b);
   });
-  
   const newChildren = {};
-  sortedKeys.forEach(k => {
-    newChildren[k] = node.children[k];
-    sortChildren(newChildren[k]);
-  });
+  sortedKeys.forEach(k => { newChildren[k] = node.children[k]; sortChildren(newChildren[k]); });
   node.children = newChildren;
 }
 
-// 2. Render DOM Tree
 function renderTree(data) {
   els.tree.innerHTML = '';
-  // Recursively build DOM
   els.tree.appendChild(createNodeDOM(data, []));
 }
 
 function createNodeDOM(node, indentLines) {
   const isFolder = node.type === 'folder';
-  
-  // Container
   const div = document.createElement('div');
   div.className = 't-node';
   
-  // 1. Header Row
   const head = document.createElement('div');
   head.className = 't-head';
   
-  // Indentation
-  indentLines.forEach(isLast => {
-    const span = document.createElement('span');
-    span.className = 'indent' + (isLast ? '' : ' line'); // Just space if last
-    head.appendChild(span);
-  });
-
-  // Arrow & Icon
+  // Header content logic (sama seperti sebelumnya)
   const arrowWrapper = document.createElement('span');
   if (isFolder) {
     arrowWrapper.innerHTML = ICONS.arrow;
-    head.onclick = (e) => {
-      // Prevent toggling when clicking comment
-      if(e.target.isContentEditable) return; 
-      div.classList.toggle('collapsed');
-    };
+    head.onclick = (e) => { if(!e.target.isContentEditable) div.classList.toggle('collapsed'); };
   } else {
-    arrowWrapper.innerHTML = `<div class="t-arrow hidden"></div>`; // spacer
+    arrowWrapper.innerHTML = `<div class="t-arrow hidden"></div>`;
   }
   head.appendChild(arrowWrapper);
 
-  // File/Folder Icon
   const iconSpan = document.createElement('span');
   iconSpan.innerHTML = isFolder ? ICONS.folder : ICONS.file;
-  // Colorize file icon
   if (!isFolder) {
-    const ext = node.name.split('.').pop();
+    const ext = node.name.split('.').pop().toLowerCase();
     const map = {js:'c-js',ts:'c-ts',html:'c-html',css:'c-css',json:'c-json',md:'c-md',png:'c-img',jpg:'c-img',jpeg:'c-img'};
-    if(map[ext]) iconSpan.firstElementChild.classList.add(map[ext]);
-    else iconSpan.firstElementChild.classList.add('c-def');
+    iconSpan.firstElementChild.classList.add(map[ext] || 'c-def');
   }
   head.appendChild(iconSpan);
 
-  // Name
   const nameSpan = document.createElement('span');
   nameSpan.className = 't-name';
   nameSpan.textContent = node.name;
   head.appendChild(nameSpan);
 
-  // Meta (Size/Count)
   const metaSpan = document.createElement('span');
   metaSpan.className = 't-meta';
-  metaSpan.textContent = isFolder 
-    ? `(${node.count} items)` 
-    : formatBytes(node.size);
+  metaSpan.textContent = isFolder ? `(${node.count})` : formatBytes(node.size);
   head.appendChild(metaSpan);
 
-  // Comment (Editable)
   const commentSpan = document.createElement('span');
   commentSpan.className = 't-comment';
   commentSpan.contentEditable = true;
   commentSpan.spellcheck = false;
-  // Stop propagation to prevent folding when clicking comment
   commentSpan.onclick = e => e.stopPropagation();
   head.appendChild(commentSpan);
 
   div.appendChild(head);
 
-  // 2. Children Container
   if (isFolder) {
     const childrenContainer = document.createElement('div');
     childrenContainer.className = 't-children';
-    
-    const childKeys = Object.keys(node.children);
-    childKeys.forEach((key, index) => {
-      const isLastChild = index === childKeys.length - 1;
-      const childNode = node.children[key];
-      // Pass down indent lines state. 
-      // If current node is last in its parent, we pass 'true' (empty space), else 'false' (vertical line)
-      const nextIndent = [...indentLines, indentLines.length > 0 ? (indentLines[indentLines.length-1] === true) : false]; 
-      
-      // Wait, simple CSS border-left logic is better for visual tree than calculating lines manually
-      // Let's rely on CSS padding hierarchy for Visual, but we need structure.
-      // Re-doing simple DOM append:
-      childrenContainer.appendChild(createNodeDOM(childNode, [])); // Pass empty, we use CSS padding
+    Object.keys(node.children).forEach(key => {
+      childrenContainer.appendChild(createNodeDOM(node.children[key], []));
     });
-    
-    // CSS-based indentation is safer for interactive DOM
-    childrenContainer.style.paddingLeft = '22px';
-    childrenContainer.style.borderLeft = '1px solid var(--line-color)';
-    childrenContainer.style.marginLeft = '9px'; // Align with arrow center
-    
     div.appendChild(childrenContainer);
   }
 
   return div;
 }
 
-/* ================== EXPORT FUNCTIONS ================== */
+/* ================== EVENT LISTENERS (GLOBAL DROP) ================== */
 
-// Generate Text String (Recursive)
-function generateTextTree(node, prefix = "", isLast = true, style = "unicode") {
-  let str = "";
-  const isRoot = prefix === "";
-  
-  // Connector Chars
-  const CHARS = style === "unicode" 
-    ? { branch: "├── ", last: "└── ", vert: "│   ", space: "    " }
-    : { branch: "|-- ", last: "`-- ", vert: "|   ", space: "    " };
+// Attach Drag & Drop to BODY so you can drop anywhere to overwrite
+['dragenter', 'dragover'].forEach(eventName => {
+  document.body.addEventListener(eventName, e => {
+    e.preventDefault();
+    document.body.classList.add('drag-active');
+  }, false);
+});
 
-  // Determine user comment from DOM
-  // Note: We traverse the DOM to get comments, matching by structure is hard.
-  // Simplification: We regenerate text without comments OR we assume data sync.
-  // For this 'Ultimate' version, let's just dump structure first.
-  
-  // NOTE: Ideally we should read the comment from the DOM.
-  // Since we don't have IDs, let's assume the order matches. 
-  // For now, simpler to just export structure + name.
-  
-  if (!isRoot) {
-    str += prefix + (isLast ? CHARS.last : CHARS.branch) + node.name;
-  } else {
-    str += node.name;
+['dragleave', 'drop'].forEach(eventName => {
+  document.body.addEventListener(eventName, e => {
+    e.preventDefault();
+    // Only remove class if we are leaving the window or dropping
+    if(eventName === 'drop' || (e.relatedTarget === null)) {
+      document.body.classList.remove('drag-active');
+    }
+  }, false);
+});
+
+document.body.addEventListener('drop', e => {
+  const dt = e.dataTransfer;
+  if(dt && dt.files && dt.files.length) {
+    processFiles(Array.from(dt.files));
   }
-  
-  // Add comment if we can find it? (Skipped for simplicity in this text export, focusing on structure)
-  str += "\n";
+});
 
-  if (node.type === 'folder') {
-    const keys = Object.keys(node.children);
-    keys.forEach((k, i) => {
-      const last = i === keys.length - 1;
-      const childPrefix = isRoot ? "" : prefix + (isLast ? CHARS.space : CHARS.vert);
-      str += generateTextTree(node.children[k], childPrefix, last, style);
-    });
-  }
-  return str;
-}
+els.drop.onclick = () => els.pick.click();
+els.pick.onchange = () => processFiles(Array.from(els.pick.files));
 
-// Button Handlers
+// Buttons
 document.getElementById('btnCopy').onclick = () => {
   if(!fileStructure.name) return;
   const style = els.selStyle.value;
-  
-  // Get comments from DOM by traversing visually
-  // This is a "What You See Is What You Get" parser
   const text = domToText(els.tree.firstElementChild, "", true, style);
-  
   navigator.clipboard.writeText(text);
-  showToast("Tree copied to clipboard!");
+  showToast("Copied to clipboard!");
 };
 
 document.getElementById('btnJson').onclick = () => {
   if(!fileStructure.name) return;
-  // Deep clone to remove UI specific circular refs if any
-  const clean = JSON.stringify(fileStructure, null, 2);
-  download(clean, "structure.json", "application/json");
+  download(JSON.stringify(fileStructure, null, 2), "tree.json", "application/json");
 };
 
 document.getElementById('btnImg').onclick = () => {
   if(!fileStructure.name) return;
-  
   showToast("Generating Image...");
-  
-  // Use html2canvas
-  html2canvas(els.tree, {
-    backgroundColor: "#1e293b",
-    scale: 2 // High res
-  }).then(canvas => {
-    const link = document.createElement('a');
-    link.download = 'project-structure.png';
-    link.href = canvas.toDataURL();
-    link.click();
+  html2canvas(els.tree, { backgroundColor: "#1e293b", scale: 2 }).then(canvas => {
+    const a = document.createElement('a');
+    a.download = 'tree.png'; a.href = canvas.toDataURL(); a.click();
   });
 };
 
-// DOM Traversal for Text Export (supports Comments)
+/* ================== UTILS ================== */
 function domToText(domNode, prefix, isLast, style) {
   if(!domNode) return "";
-  
   const head = domNode.querySelector('.t-head');
   const name = head.querySelector('.t-name').textContent;
   const comment = head.querySelector('.t-comment').textContent;
   
-  // Chars
   const CHARS = style === "unicode" 
     ? { branch: "├── ", last: "└── ", vert: "│   ", space: "    " }
     : { branch: "|-- ", last: "`-- ", vert: "|   ", space: "    " };
 
-  let line = "";
-  if (prefix === "" && isLast === true) { // Root
-    line = name;
-  } else {
-    line = prefix + (isLast ? CHARS.last : CHARS.branch) + name;
-  }
-  
+  let line = (prefix === "" && isLast === true) ? name : prefix + (isLast ? CHARS.last : CHARS.branch) + name;
   if(comment) line += "  # " + comment;
   line += "\n";
 
   const childrenContainer = domNode.querySelector('.t-children');
   if(childrenContainer && !domNode.classList.contains('collapsed')) {
-    const children = Array.from(childrenContainer.children); // .t-node elements
+    const children = Array.from(childrenContainer.children);
     children.forEach((child, i) => {
       const last = i === children.length - 1;
       const childPrefix = (prefix === "" && isLast === true) ? "" : prefix + (isLast ? CHARS.space : CHARS.vert);
@@ -595,38 +539,13 @@ function domToText(domNode, prefix, isLast, style) {
   return line;
 }
 
-/* ================== UTILS ================== */
 function formatBytes(bytes) {
-  if(bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  if(bytes === 0) return '';
+  const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
-
-function download(content, name, type) {
-  const blob = new Blob([content], {type});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = name; a.click();
-  URL.revokeObjectURL(url);
-}
-
-function showToast(msg) {
-  document.getElementById('toastMsg').textContent = msg;
-  els.toast.classList.add('show');
-  setTimeout(()=>els.toast.classList.remove('show'), 2000);
-}
-
-// Events
-els.drop.onclick = () => els.pick.click();
-els.pick.onchange = () => processFiles(Array.from(els.pick.files));
-['dragenter','dragover'].forEach(e => els.drop.addEventListener(e, ev => {ev.preventDefault(); els.drop.classList.add('drag')}));
-['dragleave','drop'].forEach(e => els.drop.addEventListener(e, ev => {ev.preventDefault(); els.drop.classList.remove('drag')}));
-els.drop.addEventListener('drop', ev => {
-  const dt = ev.dataTransfer;
-  if(dt.files.length) processFiles(Array.from(dt.files));
-});
+function download(c,n,t){ const b=new Blob([c],{type:t}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=n; a.click(); }
+function showToast(msg) { document.getElementById('toastMsg').textContent=msg; els.toast.classList.add('show'); setTimeout(()=>els.toast.classList.remove('show'),2000); }
 els.ignore.oninput = () => localStorage.setItem('pt_ignore', els.ignore.value);
 els.ext.oninput = () => localStorage.setItem('pt_ext', els.ext.value);
 
