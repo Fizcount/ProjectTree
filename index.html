@@ -3,197 +3,140 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ProjectTree Ultimate</title>
+<title>ProjectTree Ultimate v3 (Dynamic Filter)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
   :root {
-    --primary: #3b82f6;
-    --primary-hover: #2563eb;
-    --bg: #f8fafc;
-    --surface: #ffffff;
-    --border: #e2e8f0;
-    --text: #334155;
-    --text-muted: #94a3b8;
-    --code-bg: #1e293b;
-    --code-text: #e2e8f0;
-    --line-color: #475569;
+    --primary: #3b82f6; --primary-hover: #2563eb;
+    --bg: #f8fafc; --surface: #ffffff;
+    --border: #e2e8f0; --text: #334155; --text-muted: #94a3b8;
+    --code-bg: #1e293b; --code-text: #e2e8f0; --line-color: #475569;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
-  
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background-color: var(--bg);
-    color: var(--text);
-    padding: 2rem 1rem;
-    line-height: 1.5;
-    min-height: 100vh;
-    transition: background-color 0.2s;
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: var(--bg); color: var(--text);
+    padding: 2rem 1rem; line-height: 1.5; min-height: 100vh;
+    transition: background 0.2s;
   }
-
-  /* Global Drag Overlay State */
   body.drag-active { background-color: #eff6ff; }
-  body.drag-active .card { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
-  body.drag-active .drop-zone { background: #dbeafe; border-color: var(--primary); color: var(--primary); }
-
+  
   .container { max-width: 1100px; margin: 0 auto; position: relative; }
 
-  /* --- HEADER --- */
-  header { margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  /* HEADER */
+  header { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
   .brand { display: flex; align-items: center; gap: 12px; }
-  .brand h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
-  .brand-icon { width: 32px; height: 32px; color: var(--primary); }
+  .brand h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; }
 
-  /* --- CARD --- */
+  /* CARD & TOOLBAR */
   .card {
-    background: var(--surface);
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    border: 1px solid var(--border);
-    overflow: hidden;
-    margin-bottom: 1.5rem;
-    position: relative;
-    min-height: 300px;
-    transition: all 0.2s ease;
+    background: var(--surface); border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0/0.1); border: 1px solid var(--border);
+    overflow: visible; /* Changed to visible for popup */
+    margin-bottom: 1.5rem; position: relative; min-height: 300px;
   }
 
-  /* --- LOADING OVERLAY --- */
-  .loading-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(4px);
-    z-index: 50;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-  }
-  .loading-overlay.active { opacity: 1; pointer-events: all; }
-
-  .spinner {
-    width: 40px; height: 40px;
-    border: 3px solid #e2e8f0;
-    border-top-color: var(--primary);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-bottom: 1rem;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-weight: 600; color: var(--text); font-size: 0.95rem; }
-
-  /* --- TOOLBAR --- */
   .toolbar {
-    padding: 1.25rem;
-    border-bottom: 1px solid var(--border);
-    background: #f8fafc;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
+    padding: 1.25rem; border-bottom: 1px solid var(--border); background: #f8fafc;
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center; position: relative;
+    z-index: 20;
   }
-
+  
   .group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
 
-  input[type="text"], select {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    color: var(--text);
-    background: white;
-    transition: all 0.2s;
-  }
-  input[type="text"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-
-  /* BUTTONS */
+  /* BUTTONS & INPUTS */
   .btn {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 0.5rem 0.85rem; border-radius: 6px;
     font-weight: 500; font-size: 0.875rem; cursor: pointer;
     border: 1px solid var(--border); background: white; color: var(--text);
-    transition: all 0.2s;
+    transition: all 0.2s; user-select: none;
   }
   .btn:hover { background: #f1f5f9; border-color: #94a3b8; }
+  .btn.active { background: #e0f2fe; border-color: var(--primary); color: var(--primary); }
   .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
   .btn-primary:hover { background: var(--primary-hover); }
-  .btn svg { width: 16px; height: 16px; }
 
-  /* --- DROP ZONE (Initial State) --- */
+  input[type="text"], select {
+    padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1;
+    border-radius: 6px; font-size: 0.875rem; color: var(--text);
+  }
+
+  /* --- FILTER PANEL (NEW) --- */
+  .filter-panel {
+    position: absolute; top: 100%; left: 0; margin-top: 8px;
+    background: white; border: 1px solid var(--border);
+    border-radius: 8px; box-shadow: 0 10px 15px -3px rgb(0 0 0/0.1);
+    width: 400px; max-width: 90vw; padding: 1.25rem;
+    z-index: 50; display: none;
+  }
+  .filter-panel.show { display: block; }
+  
+  .fp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+  .fp-title { font-weight: 700; font-size: 0.95rem; }
+  
+  /* Toggle Switch */
+  .toggle { position: relative; display: inline-block; width: 40px; height: 22px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; inset: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+  .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+  input:checked + .slider { background-color: var(--primary); }
+  input:checked + .slider:before { transform: translateX(18px); }
+
+  /* Checkbox Grid */
+  .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 300px; overflow-y: auto; margin-bottom: 1rem; }
+  .chk-label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); }
+  .chk-label:hover { color: var(--primary); }
+  .chk-label input { accent-color: var(--primary); }
+
+  /* --- DROP ZONE --- */
   .drop-zone {
-    border: 2px dashed #cbd5e1;
-    border-radius: 8px;
-    padding: 3rem;
-    text-align: center;
-    background: white;
-    margin: 1.5rem;
-    transition: all 0.2s;
-    cursor: pointer;
-    color: var(--text-muted);
+    border: 2px dashed #cbd5e1; border-radius: 8px; padding: 3rem;
+    text-align: center; background: white; margin: 1.5rem;
+    transition: all 0.2s; cursor: pointer; color: var(--text-muted);
   }
   .drop-zone-icon { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.5; }
 
-  /* --- TREE VIEW (DOM) --- */
+  /* --- TREE CONTAINER --- */
   .tree-container {
-    background: var(--code-bg);
-    color: var(--code-text);
-    padding: 1.5rem;
-    font-family: "Fira Code", Consolas, Monaco, monospace;
-    font-size: 13.5px;
-    overflow-x: auto;
-    min-height: 400px;
-    display: none; /* Hidden by default */
+    background: var(--code-bg); color: var(--code-text);
+    padding: 1.5rem; font-family: "Fira Code", monospace; font-size: 13.5px;
+    overflow-x: auto; min-height: 400px; display: none;
   }
   .tree-container.show { display: block; }
-
-  /* Node Styling */
+  
+  /* Tree Nodes */
   .t-node { display: block; }
   .t-head { display: flex; align-items: center; padding: 2px 0; cursor: pointer; user-select: none; }
   .t-head:hover { background: rgba(255,255,255,0.05); }
-  
   .indent { display: inline-block; width: 22px; height: 100%; border-right: 1px solid transparent; flex-shrink: 0; }
-  
-  .t-icon { width: 16px; height: 16px; margin-right: 8px; flex-shrink: 0; }
-  .t-arrow { width: 14px; height: 14px; margin-right: 4px; transition: transform 0.2s; color: var(--text-muted); opacity: 0.7; }
-  .t-node.collapsed .t-arrow { transform: rotate(-90deg); }
-  .t-arrow.hidden { visibility: hidden; }
-  
-  .t-name { margin-right: 12px; white-space: nowrap; }
-  .t-meta { font-size: 11px; color: #64748b; margin-right: 12px; min-width: 50px; text-align: right; user-select: none; }
-  
-  .t-comment { color: #10b981; font-style: italic; opacity: 0.6; border-bottom: 1px dashed transparent; min-width: 20px; transition: opacity 0.2s; }
-  .t-comment:hover, .t-comment:focus { opacity: 1; border-bottom-color: #10b981; }
-  .t-comment:empty::before { content: "#"; color: #475569; opacity: 0.5; margin-left: 5px; }
-  .t-comment:focus::before { content: ""; }
-
-  /* File Colors */
-  .c-folder { color: #fcd34d; }
-  .c-js { color: #f59e0b; } .c-ts { color: #3b82f6; }
-  .c-html { color: #ef4444; } .c-css { color: #06b6d4; }
-  .c-json { color: #84cc16; } .c-md { color: #a855f7; }
-  .c-img { color: #10b981; } .c-def { color: #94a3b8; }
-
-  /* Children Indentation */
   .t-children { padding-left: 20px; border-left: 1px solid var(--line-color); margin-left: 8px; }
   .t-node.collapsed .t-children { display: none; }
+  
+  /* Icons & Colors */
+  .t-icon { width: 16px; height: 16px; margin-right: 8px; flex-shrink: 0; }
+  .t-arrow { width: 14px; height: 14px; margin-right: 4px; transition: transform 0.2s; opacity: 0.7; }
+  .t-node.collapsed .t-arrow { transform: rotate(-90deg); }
+  .t-arrow.hidden { visibility: hidden; }
+  .c-folder { color: #fcd34d; } .c-def { color: #94a3b8; }
+  .c-js { color: #f59e0b; } .c-ts { color: #3b82f6; } .c-html { color: #ef4444; } 
+  .c-css { color: #06b6d4; } .c-json { color: #84cc16; } .c-md { color: #a855f7; } .c-img { color: #10b981; }
 
-  /* Toast Notification */
-  .toast {
-    position: fixed; bottom: 2rem; right: 2rem;
-    background: #10b981; color: white;
-    padding: 0.75rem 1.25rem; border-radius: 8px;
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-    transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    font-weight: 500; display: flex; align-items: center; gap: 8px; z-index: 100;
-  }
+  .t-meta { font-size: 11px; color: #64748b; margin-right: 12px; min-width: 50px; text-align: right; }
+  .t-comment { color: #10b981; font-style: italic; opacity: 0.6; min-width: 20px; border-bottom: 1px dashed transparent; }
+  .t-comment:hover, .t-comment:focus { opacity: 1; border-bottom-color: #10b981; }
+
+  /* LOADING & TOAST */
+  .loading-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.95); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .loading-overlay.active { opacity: 1; pointer-events: all; }
+  .spinner { width: 40px; height: 40px; border: 3px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  
+  .toast { position: fixed; bottom: 2rem; right: 2rem; background: #10b981; color: white; padding: 0.75rem 1.25rem; border-radius: 8px; transform: translateY(100px); transition: 0.3s; opacity: 0; z-index: 200; font-weight: 600; }
   .toast.show { transform: translateY(0); opacity: 1; }
-
-  /* Hidden Input */
   #pick { display: none; }
 </style>
 </head>
@@ -202,56 +145,77 @@
 <div class="container">
   <header>
     <div class="brand">
-      <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
       <h1>ProjectTree</h1>
     </div>
     <div class="group">
-      <button class="btn" onclick="window.location.reload()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-        Reset
-      </button>
+      <button class="btn" onclick="window.location.reload()">Reset</button>
     </div>
   </header>
 
   <div class="card">
     <div id="loading" class="loading-overlay">
       <div class="spinner"></div>
-      <div class="loading-text">Processing Project Files...</div>
-      <div id="loadingCount" style="font-size:0.8rem; color:#64748b; margin-top:5px">Please wait</div>
+      <div class="loading-text">Processing...</div>
+      <div id="loadingCount" style="font-size:0.8rem; color:#64748b; margin-top:5px"></div>
     </div>
 
     <div class="toolbar">
       <div class="group">
         <label for="pick" class="btn btn-primary">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Select Folder
         </label>
-        <div class="divider"></div>
+        
+        <div style="position: relative;">
+          <button id="btnFilterToggle" class="btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+            Filter Settings
+          </button>
+          
+          <div id="filterPanel" class="filter-panel">
+            <div class="fp-header">
+              <span class="fp-title">Ignore Filters</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:0.8rem;">Enabled</span>
+                <label class="toggle">
+                  <input type="checkbox" id="masterFilterToggle" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+            
+            <div style="font-size:0.8rem; color:#64748b; margin-bottom:8px;">Common Folders to Ignore:</div>
+            <div id="filterGrid" class="filter-grid">
+              </div>
+            
+            <div class="divider" style="width:100%; height:1px; margin: 10px 0;"></div>
+            
+            <div style="font-size:0.8rem; color:#64748b; margin-bottom:4px;">Manual Custom Patterns:</div>
+            <input id="inpIgnore" type="text" placeholder="e.g. assets, secrets, *.log" style="width:100%" />
+            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Comma separated. Supports simple wildcards.</div>
+          </div>
+        </div>
+
         <select id="selStyle" class="btn">
           <option value="unicode">Style: Unicode (├──)</option>
           <option value="ascii">Style: ASCII (|--)</option>
         </select>
-        <button id="btnCopy" class="btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          Copy Text
-        </button>
+        
+        <input id="inpExt" type="text" placeholder="Only Ext (e.g. .js,.py)" style="width:140px" />
       </div>
 
       <div class="group" style="margin-left:auto">
+        <button id="btnCopy" class="btn">📋 Copy</button>
         <button id="btnJson" class="btn">JSON</button>
-        <button id="btnImg" class="btn">PNG Image</button>
-      </div>
-      
-      <div style="width:100%; margin-top:5px" class="group">
-        <input id="inpIgnore" type="text" placeholder="Ignore (e.g. node_modules, .git, dist)" style="flex:2" />
-        <input id="inpExt" type="text" placeholder="Filter Ext (e.g. .js, .py)" style="flex:1" />
+        <button id="btnImg" class="btn">PNG</button>
       </div>
     </div>
 
     <div id="dropZone" class="drop-zone">
-      <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-      <div style="font-weight:600; color:var(--text); font-size:1.1rem">Drag & Drop Folder Here</div>
-      <div style="font-size:0.85rem; margin-top:0.5rem">or drop anywhere on the page to overwrite</div>
+      <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+      <div style="font-weight:600; font-size:1.1rem">Drag & Drop Folder Here</div>
+      <div style="font-size:0.85rem; margin-top:0.5rem">Drop anywhere to update</div>
     </div>
 
     <div id="treeContainer" class="tree-container"></div>
@@ -259,94 +223,185 @@
 </div>
 
 <input type="file" id="pick" webkitdirectory multiple />
-
-<div id="toast" class="toast">
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-  <span id="toastMsg">Action Successful</span>
-</div>
+<div id="toast" class="toast">Done!</div>
 
 <script>
-/* ================== SVG ICONS ================== */
-const ICONS = {
-  arrow: `<svg class="t-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>`,
-  folder: `<svg class="t-icon c-folder" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`,
-  file: `<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`
-};
+/* ================== CONFIG: EXPANDED DEFAULT IGNORE LIST ================== */
+const COMMON_IGNORES = [
+  // Dependencies & Environments
+  "node_modules", "bower_components", "jspm_packages", 
+  "venv", ".venv", "env", ".env", "__pycache__", ".tox",
+  "ruby_gem_home", ".bundle", "vendor",
+  
+  // Version Control
+  ".git", ".svn", ".hg", ".gitignore", ".gitattributes",
+  
+  // IDE & Editor Configs
+  ".vscode", ".idea", ".settings", ".project", ".classpath", "*.sublime-*",
+  
+  // Build, Dist, Output
+  "dist", "build", "out", "target", "bin", "obj", 
+  "coverage", ".next", ".nuxt", ".cache", ".parcel-cache",
+  
+  // Logs & Databases
+  "logs", "*.log", "npm-debug.log", "yarn-error.log", "*.sqlite", "*.db",
+  
+  // System / Misc
+  ".DS_Store", "Thumbs.db", "tmp", "temp", "secrets"
+];
 
-/* ================== CONFIG ================== */
-const DEFAULT_IGNORE = new Set(["node_modules",".git",".vscode",".idea","dist","build","__pycache__",".DS_Store","coverage"]);
+/* ================== STATE & DOM ================== */
+let fileStructure = {};
+let allFilesRef = []; // Store raw files for re-filtering without re-reading
+let activeFilters = new Set(COMMON_IGNORES); // Default active
+let isFilterEnabled = true;
 
-/* ================== STATE & ELEMENTS ================== */
-let fileStructure = {}; 
 const els = {
   pick: document.getElementById('pick'),
   drop: document.getElementById('dropZone'),
   tree: document.getElementById('treeContainer'),
-  ignore: document.getElementById('inpIgnore'),
-  ext: document.getElementById('inpExt'),
-  toast: document.getElementById('toast'),
-  selStyle: document.getElementById('selStyle'),
+  ignoreInput: document.getElementById('inpIgnore'),
+  extInput: document.getElementById('inpExt'),
+  filterPanel: document.getElementById('filterPanel'),
+  filterGrid: document.getElementById('filterGrid'),
+  btnFilterToggle: document.getElementById('btnFilterToggle'),
+  masterFilterToggle: document.getElementById('masterFilterToggle'),
   loading: document.getElementById('loading'),
   loadingCount: document.getElementById('loadingCount')
 };
 
-// Load saved settings
-els.ignore.value = localStorage.getItem('pt_ignore') || "";
-els.ext.value = localStorage.getItem('pt_ext') || "";
+/* ================== INIT ================== */
+// Render Checkboxes
+function initFilters() {
+  els.filterGrid.innerHTML = '';
+  COMMON_IGNORES.sort().forEach(item => {
+    const label = document.createElement('label');
+    label.className = 'chk-label';
+    
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.value = item;
+    chk.checked = true; // Default On
+    chk.onchange = () => {
+      if(chk.checked) activeFilters.add(item);
+      else activeFilters.delete(item);
+      if(allFilesRef.length) processFiles(allFilesRef, true); // Re-process
+    };
+
+    label.appendChild(chk);
+    label.appendChild(document.createTextNode(item));
+    els.filterGrid.appendChild(label);
+  });
+}
+initFilters();
+
+// Event Listeners for Filters
+els.btnFilterToggle.onclick = (e) => {
+  e.stopPropagation();
+  els.filterPanel.classList.toggle('show');
+  els.btnFilterToggle.classList.toggle('active');
+};
+// Close panel when clicking outside
+document.addEventListener('click', (e) => {
+  if (!els.filterPanel.contains(e.target) && e.target !== els.btnFilterToggle) {
+    els.filterPanel.classList.remove('show');
+    els.btnFilterToggle.classList.remove('active');
+  }
+});
+
+// Master Toggle Logic
+els.masterFilterToggle.onchange = () => {
+  isFilterEnabled = els.masterFilterToggle.checked;
+  // Visual disable inputs
+  const inputs = els.filterPanel.querySelectorAll('input[type="checkbox"]:not(#masterFilterToggle), input[type="text"]');
+  inputs.forEach(i => i.disabled = !isFilterEnabled);
+  els.filterGrid.style.opacity = isFilterEnabled ? "1" : "0.5";
+  
+  if(allFilesRef.length) processFiles(allFilesRef, true); // Re-process
+};
+
+// Custom Input Logic
+els.ignoreInput.oninput = () => {
+  if(allFilesRef.length) processFiles(allFilesRef, true);
+};
+els.extInput.oninput = () => {
+  if(allFilesRef.length) processFiles(allFilesRef, true);
+};
+
 
 /* ================== CORE LOGIC ================== */
-async function processFiles(files) {
+async function processFiles(files, isReRun = false) {
   if (!files.length) return;
+  if (!isReRun) allFilesRef = files; // Save ref for live filtering
 
-  // 1. Loading UI
   els.loading.classList.add('active');
-  els.loadingCount.textContent = `Queued ${files.length} files...`;
-  
-  // Unblock UI thread for spinner to render
-  await new Promise(r => setTimeout(r, 80));
+  if(!isReRun) els.loadingCount.textContent = `Scanning ${files.length} files...`;
+  else els.loadingCount.textContent = `Applying filters...`;
+
+  await new Promise(r => setTimeout(r, 20)); // UI Yield
 
   try {
-    // 2. Reset UI
-    fileStructure = {}; 
-    els.tree.innerHTML = ''; 
-    els.drop.style.display = 'none'; 
-    els.tree.classList.add('show');
+    fileStructure = {};
+    els.tree.innerHTML = '';
+    
+    if(!isReRun) {
+      els.drop.style.display = 'none';
+      els.tree.classList.add('show');
+    }
 
-    // 3. Prepare Config
-    const manualIgnore = els.ignore.value.split(',').map(s=>s.trim()).filter(Boolean);
-    const ignoreSet = new Set([...DEFAULT_IGNORE, ...manualIgnore]);
-    const allowedExts = els.ext.value.split(',').map(s=>s.trim()).filter(Boolean);
+    // Prepare Filters
+    const customIgnore = els.ignoreInput.value.split(',').map(s=>s.trim()).filter(Boolean);
+    const allowedExts = els.extInput.value.split(',').map(s=>s.trim()).filter(Boolean);
 
-    // Read .gitignore if present
+    // .gitignore handling (only on first run or full re-scan, but simplifed here)
     const gitignore = files.find(f => f.name === ".gitignore");
-    if(gitignore) {
+    let gitIgnoreSet = new Set();
+    if(gitignore && isFilterEnabled) {
       try {
         const txt = await gitignore.text();
         txt.split(/\r?\n/).forEach(l => {
-          l = l.trim(); 
-          if(l && !l.startsWith('#')) ignoreSet.add(l.replace(/\/$/,''));
+          l=l.trim(); if(l && !l.startsWith('#')) gitIgnoreSet.add(l.replace(/\/$/,''));
         });
       } catch(e){}
     }
 
-    // 4. Build Tree
+    // BUILD TREE
     const root = { name: "root", type: "folder", children: {}, size: 0, count: 0 };
     
-    // Chunk processing to keep UI responsive for huge folders
-    const CHUNK_SIZE = 2000;
-    for (let i = 0; i < files.length; i += CHUNK_SIZE) {
-      const chunk = files.slice(i, i + CHUNK_SIZE);
-      
-      // Update loading text
-      els.loadingCount.textContent = `Processing ${Math.min(i + CHUNK_SIZE, files.length)} / ${files.length}`;
-      if(i > 0) await new Promise(r => setTimeout(r, 0)); // Yield
+    const CHUNK = 3000;
+    for (let i = 0; i < files.length; i += CHUNK) {
+      const chunk = files.slice(i, i+CHUNK);
+      if(!isReRun) els.loadingCount.textContent = `Processing ${Math.min(i+CHUNK, files.length)}...`;
+      if(i > 0) await new Promise(r => setTimeout(r, 0));
 
       for (const f of chunk) {
-        const parts = f.webkitRelativePath.split('/');
-        if (parts.some(p => ignoreSet.has(p))) continue;
+        // FILTER LOGIC
+        if (isFilterEnabled) {
+          const parts = f.webkitRelativePath.split('/');
+          
+          // 1. Check Default Checklist & Custom Input & GitIgnore
+          const shouldIgnore = parts.some(p => {
+             // Exact match in active checkbox set
+             if(activeFilters.has(p)) return true;
+             // Match in custom input (simple wildcard support)
+             if(customIgnore.some(rule => {
+               if(rule.startsWith('*')) return p.endsWith(rule.slice(1));
+               return p === rule;
+             })) return true;
+             // Match .gitignore
+             if(gitIgnoreSet.has(p)) return true;
+             return false;
+          });
+
+          if (shouldIgnore) continue;
+        }
+
+        // 2. Check Extension
         if (allowedExts.length && !allowedExts.some(e => f.name.endsWith(e))) continue;
 
+        // Add to Tree
         let curr = root;
+        const parts = f.webkitRelativePath.split('/');
         for (let j = 0; j < parts.length; j++) {
           const part = parts[j];
           const isFile = (j === parts.length - 1);
@@ -355,8 +410,7 @@ async function processFiles(files) {
               name: part,
               type: isFile ? "file" : "folder",
               children: {},
-              size: isFile ? f.size : 0,
-              count: 0
+              size: isFile ? f.size : 0, count: 0
             };
           }
           curr = curr.children[part];
@@ -364,215 +418,133 @@ async function processFiles(files) {
       }
     }
 
-    // 5. Calculate & Render
-    els.loadingCount.textContent = "Finalizing structure...";
-    await new Promise(r => setTimeout(r, 20));
-
+    // Render
     calcStats(root);
     sortChildren(root);
-
-    // Un-nest root wrapper
-    fileStructure = root.children[Object.keys(root.children)[0]]; 
+    fileStructure = root.children[Object.keys(root.children)[0]];
     
-    if(!fileStructure) {
-      els.tree.innerHTML = '<div style="text-align:center; padding:3rem; color:var(--text-muted)">Files filtered out or folder empty.</div>';
-    } else {
-      renderTree(fileStructure);
-    }
+    if(!fileStructure) els.tree.innerHTML = '<div style="text-align:center;padding:2rem;color:#94a3b8">All files hidden by filters.</div>';
+    else renderTree(fileStructure);
 
-  } catch (err) {
-    console.error(err);
-    alert("Error: " + err.message);
-  } finally {
-    els.loading.classList.remove('active');
-  }
+  } catch(e) { console.error(e); } 
+  finally { els.loading.classList.remove('active'); }
 }
 
-/* ================== HELPERS ================== */
+/* ================== HELPER FUNCS (Same as before) ================== */
 function calcStats(node) {
-  if (node.type === "file") return;
-  let sumSize = 0;
-  let sumCount = 0;
-  for (const key in node.children) {
-    const child = node.children[key];
-    calcStats(child);
-    sumSize += child.size;
-    sumCount += (child.type === 'file' ? 1 : child.count);
+  if(node.type === 'file') return;
+  let s=0, c=0;
+  for(let k in node.children){
+    calcStats(node.children[k]);
+    s += node.children[k].size;
+    c += (node.children[k].type==='file'?1:node.children[k].count);
   }
-  node.size = sumSize;
-  node.count = Object.keys(node.children).length;
+  node.size=s; node.count=c;
 }
-
 function sortChildren(node) {
-  if (node.type === 'file') return;
-  const sortedKeys = Object.keys(node.children).sort((a,b) => {
-    const nA = node.children[a], nB = node.children[b];
-    if (nA.type !== nB.type) return nA.type === 'folder' ? -1 : 1;
+  if(node.type==='file') return;
+  const keys = Object.keys(node.children).sort((a,b)=>{
+    const A=node.children[a], B=node.children[b];
+    if(A.type!==B.type) return A.type==='folder'?-1:1;
     return a.localeCompare(b);
   });
-  const newChildren = {};
-  sortedKeys.forEach(k => { newChildren[k] = node.children[k]; sortChildren(newChildren[k]); });
-  node.children = newChildren;
+  const n={}; keys.forEach(k=>{n[k]=node.children[k];sortChildren(n[k])});
+  node.children=n;
 }
 
-/* ================== DOM RENDER ================== */
-function renderTree(data) {
-  els.tree.innerHTML = '';
-  els.tree.appendChild(createNodeDOM(data));
-}
+/* ================== RENDER (SVG ICONS) ================== */
+const ICONS = {
+  arrow: `<svg class="t-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>`,
+  folder: `<svg class="t-icon c-folder" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`,
+  file: `<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`
+};
 
-function createNodeDOM(node) {
+function renderTree(data) { els.tree.innerHTML = ''; els.tree.appendChild(createDOM(data)); }
+function createDOM(node) {
   const isFolder = node.type === 'folder';
-  const div = document.createElement('div');
-  div.className = 't-node';
+  const div = document.createElement('div'); div.className = 't-node';
+  const head = document.createElement('div'); head.className = 't-head';
   
-  const head = document.createElement('div');
-  head.className = 't-head';
-  
-  // 1. Arrow
-  const arrowWrapper = document.createElement('span');
-  if (isFolder) {
-    arrowWrapper.innerHTML = ICONS.arrow;
-    head.onclick = (e) => { 
-      if(!e.target.isContentEditable) div.classList.toggle('collapsed'); 
-    };
-  } else {
-    arrowWrapper.innerHTML = `<div class="t-arrow hidden"></div>`;
-  }
-  head.appendChild(arrowWrapper);
+  const arrow = document.createElement('span');
+  arrow.innerHTML = isFolder ? ICONS.arrow : `<div class="t-arrow hidden"></div>`;
+  if(isFolder) head.onclick = (e) => { if(!e.target.isContentEditable) div.classList.toggle('collapsed'); };
+  head.appendChild(arrow);
 
-  // 2. Icon
-  const iconSpan = document.createElement('span');
-  iconSpan.innerHTML = isFolder ? ICONS.folder : ICONS.file;
-  if (!isFolder) {
+  const icon = document.createElement('span');
+  icon.innerHTML = isFolder ? ICONS.folder : ICONS.file;
+  if(!isFolder) {
     const ext = node.name.split('.').pop().toLowerCase();
-    const map = {js:'c-js',ts:'c-ts',jsx:'c-js',tsx:'c-ts',html:'c-html',css:'c-css',scss:'c-css',json:'c-json',md:'c-md',png:'c-img',jpg:'c-img',svg:'c-img'};
-    iconSpan.firstElementChild.classList.add(map[ext] || 'c-def');
+    const c = {js:'c-js',ts:'c-ts',html:'c-html',css:'c-css',json:'c-json',md:'c-md',png:'c-img',jpg:'c-img'}[ext] || 'c-def';
+    icon.firstElementChild.classList.add(c);
   }
-  head.appendChild(iconSpan);
+  head.appendChild(icon);
 
-  // 3. Name
-  const nameSpan = document.createElement('span');
-  nameSpan.className = 't-name';
-  nameSpan.textContent = node.name;
-  head.appendChild(nameSpan);
+  const name = document.createElement('span'); name.textContent = node.name; name.className = 't-name';
+  head.appendChild(name);
 
-  // 4. Meta
-  const metaSpan = document.createElement('span');
-  metaSpan.className = 't-meta';
-  metaSpan.textContent = isFolder ? `(${node.count})` : formatBytes(node.size);
-  head.appendChild(metaSpan);
-
-  // 5. Comment
-  const commentSpan = document.createElement('span');
-  commentSpan.className = 't-comment';
-  commentSpan.contentEditable = true;
-  commentSpan.spellcheck = false;
-  commentSpan.onclick = e => e.stopPropagation();
-  head.appendChild(commentSpan);
+  const meta = document.createElement('span'); meta.className = 't-meta';
+  meta.textContent = isFolder ? `(${node.count})` : (node.size<1024 ? node.size+' B' : (node.size/1024).toFixed(1)+' KB');
+  head.appendChild(meta);
+  
+  const comment = document.createElement('span'); comment.className = 't-comment';
+  comment.contentEditable = true; comment.spellcheck = false;
+  comment.onclick = e => e.stopPropagation();
+  head.appendChild(comment);
 
   div.appendChild(head);
 
-  // 6. Children
-  if (isFolder) {
-    const childrenContainer = document.createElement('div');
-    childrenContainer.className = 't-children';
-    Object.keys(node.children).forEach(key => {
-      childrenContainer.appendChild(createNodeDOM(node.children[key]));
-    });
-    div.appendChild(childrenContainer);
+  if(isFolder) {
+    const childs = document.createElement('div'); childs.className = 't-children';
+    for(let k in node.children) childs.appendChild(createDOM(node.children[k]));
+    div.appendChild(childs);
   }
-
   return div;
 }
 
-/* ================== GLOBAL DRAG & DROP ================== */
-['dragenter', 'dragover'].forEach(e => {
-  document.body.addEventListener(e, ev => {
-    ev.preventDefault();
-    document.body.classList.add('drag-active');
-  }, false);
+/* ================== GLOBAL DRAG ================== */
+['dragenter','dragover'].forEach(e=>document.body.addEventListener(e,ev=>{ev.preventDefault();document.body.classList.add('drag-active')}));
+['dragleave','drop'].forEach(e=>document.body.addEventListener(e,ev=>{ev.preventDefault();if(e==='drop'||!ev.relatedTarget)document.body.classList.remove('drag-active')}));
+document.body.addEventListener('drop', ev=>{
+  if(ev.dataTransfer.files.length) processFiles(Array.from(ev.dataTransfer.files));
 });
-['dragleave', 'drop'].forEach(e => {
-  document.body.addEventListener(e, ev => {
-    ev.preventDefault();
-    if(e === 'drop' || (ev.relatedTarget === null)) {
-      document.body.classList.remove('drag-active');
-    }
-  }, false);
-});
-document.body.addEventListener('drop', ev => {
-  const dt = ev.dataTransfer;
-  if(dt && dt.files && dt.files.length) processFiles(Array.from(dt.files));
-});
-
-/* ================== EXPORT & ACTIONS ================== */
 els.drop.onclick = () => els.pick.click();
 els.pick.onchange = () => processFiles(Array.from(els.pick.files));
 
+/* ================== ACTIONS ================== */
 document.getElementById('btnCopy').onclick = () => {
   if(!fileStructure.name) return;
-  const style = els.selStyle.value;
-  const text = domToText(els.tree.firstElementChild, "", true, style);
-  navigator.clipboard.writeText(text);
-  showToast("Structure copied to clipboard!");
+  const txt = domToText(els.tree.firstElementChild, "", true, document.getElementById('selStyle').value);
+  navigator.clipboard.writeText(txt);
+  showToast();
 };
-
-document.getElementById('btnJson').onclick = () => {
-  if(!fileStructure.name) return;
-  download(JSON.stringify(fileStructure, null, 2), "project-tree.json", "application/json");
-};
-
+document.getElementById('btnJson').onclick = () => { if(fileStructure.name) download(JSON.stringify(fileStructure,null,2), 'tree.json'); };
 document.getElementById('btnImg').onclick = () => {
   if(!fileStructure.name) return;
-  showToast("Rendering Image...");
-  html2canvas(els.tree, { 
-    backgroundColor: "#1e293b", 
-    scale: 2,
-    windowWidth: els.tree.scrollWidth 
-  }).then(canvas => {
-    const a = document.createElement('a');
-    a.download = 'project-tree.png'; a.href = canvas.toDataURL(); a.click();
+  const t = els.tree;
+  html2canvas(t, {backgroundColor: "#1e293b", scale: 2, windowWidth: t.scrollWidth, height: t.scrollHeight}).then(c => {
+    const a = document.createElement('a'); a.download='tree.png'; a.href=c.toDataURL(); a.click();
   });
 };
 
-// Recursive text builder
-function domToText(domNode, prefix, isLast, style) {
-  if(!domNode) return "";
-  const head = domNode.querySelector('.t-head');
-  const name = head.querySelector('.t-name').textContent;
-  const comment = head.querySelector('.t-comment').textContent;
-  
-  const CHARS = style === "unicode" 
-    ? { branch: "├── ", last: "└── ", vert: "│   ", space: "    " }
-    : { branch: "|-- ", last: "`-- ", vert: "|   ", space: "    " };
-
-  let line = (prefix === "" && isLast === true) ? name : prefix + (isLast ? CHARS.last : CHARS.branch) + name;
-  if(comment) line += "  # " + comment;
+function domToText(dom, pre, last, style) {
+  if(!dom) return "";
+  const name = dom.querySelector('.t-name').textContent;
+  const comm = dom.querySelector('.t-comment').textContent;
+  const chars = style==="unicode" ? {b:"├── ",l:"└── ",v:"│   ",s:"    "} : {b:"|-- ",l:"`-- ",v:"|   ",s:"    "};
+  let line = (pre===""&&last) ? name : pre + (last?chars.l:chars.b) + name;
+  if(comm) line += "  # " + comm;
   line += "\n";
-
-  const childrenContainer = domNode.querySelector('.t-children');
-  if(childrenContainer && !domNode.classList.contains('collapsed')) {
-    const children = Array.from(childrenContainer.children);
-    children.forEach((child, i) => {
-      const last = i === children.length - 1;
-      const childPrefix = (prefix === "" && isLast === true) ? "" : prefix + (isLast ? CHARS.space : CHARS.vert);
-      line += domToText(child, childPrefix, last, style);
+  
+  const childs = dom.querySelector('.t-children');
+  if(childs && !dom.classList.contains('collapsed')) {
+    Array.from(childs.children).forEach((c,i,arr) => {
+      line += domToText(c, (pre===""&&last)?"":pre+(last?chars.s:chars.v), i===arr.length-1, style);
     });
   }
   return line;
 }
-
-function formatBytes(bytes) {
-  if(bytes === 0) return '';
-  const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
-function download(c,n,t){ const b=new Blob([c],{type:t}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=n; a.click(); }
-function showToast(msg) { document.getElementById('toastMsg').textContent=msg; els.toast.classList.add('show'); setTimeout(()=>els.toast.classList.remove('show'),2000); }
-els.ignore.oninput = () => localStorage.setItem('pt_ignore', els.ignore.value);
-els.ext.oninput = () => localStorage.setItem('pt_ext', els.ext.value);
-
+function download(c,n){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:'text/plain'}));a.download=n;a.click();}
+function showToast(){ els.toast.classList.add('show'); setTimeout(()=>els.toast.classList.remove('show'),2000); }
 </script>
 </body>
 </html>
