@@ -3,124 +3,137 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>ProjectTree ClearView</title>
+<title>ProjectTree Fixed</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
   :root {
-    --primary: #3b82f6;
-    --bg: #f8fafc; --surface: #ffffff;
-    --border: #cbd5e1; --text: #1e293b; 
-    --line-color: #94a3b8; /* Garis lebih gelap agar terlihat */
+    --primary: #3b82f6; --primary-hover: #2563eb;
+    --bg: #f1f5f9; --surface: #ffffff;
+    --border: #cbd5e1; --text: #1e293b; --text-muted: #64748b;
+    --code-bg: #0f172a; --code-text: #e2e8f0; 
+    /* PERBAIKAN: Warna garis lebih terang agar terlihat jelas di gambar */
+    --line-color: #475569; 
     --control-h: 44px;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
   body {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background-color: var(--bg); color: var(--text);
     padding: 1.5rem 1rem; line-height: 1.5; min-height: 100vh;
   }
+  body.drag-active .card { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2); }
   
-  .container { max-width: 1100px; margin: 0 auto; }
-  header { margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.4rem; color: #0f172a; }
+  .container { max-width: 1100px; margin: 0 auto; position: relative; }
 
-  /* CARD */
+  header { margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
+
   .card {
     background: var(--surface); border-radius: 16px;
-    box-shadow: 0 4px 20px -5px rgba(0,0,0,0.1); border: 1px solid var(--border);
-    overflow: hidden; position: relative; min-height: 300px;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0/0.05); border: 1px solid var(--border);
+    overflow: visible; position: relative; min-height: 300px;
   }
 
   /* TOOLBAR GRID */
   .toolbar {
-    padding: 1rem; background: #f1f5f9; border-bottom: 1px solid var(--border);
-    display: grid; gap: 10px; grid-template-columns: 1fr;
+    padding: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;
+    border-radius: 16px 16px 0 0; display: grid; gap: 10px;
+    grid-template-columns: 1fr; 
   }
-  @media (min-width: 640px) { .toolbar { grid-template-columns: auto 1fr auto; } }
-
-  .row-group { display: flex; gap: 10px; }
-  .btn, input, select {
-    height: var(--control-h); padding: 0 1rem; border: 1px solid var(--border);
-    border-radius: 8px; font-size: 0.9rem; background: white; width: 100%;
-    display: flex; align-items: center; justify-content: center; gap:6px;
+  @media (min-width: 640px) {
+    .toolbar { grid-template-columns: auto 1fr auto; align-items: center; }
+    .mobile-row { display: contents; }
   }
-  .btn:hover { background: #e2e8f0; }
-  .btn.active { background: #dbeafe; border-color: var(--primary); color: var(--primary); }
+  .grid-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
-  /* FILTER MODAL */
+  .btn, input[type="text"], select {
+    height: var(--control-h); padding: 0 1rem;
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 0.9rem; font-weight: 500;
+    background: white; color: var(--text);
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.2s; width: 100%;
+  }
+  input[type="text"] { text-align: left; justify-content: flex-start; }
+  input[type="text"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); }
+  .btn:hover { background: #f1f5f9; border-color: #94a3b8; }
+  .btn.active { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
+  .btn svg { width: 18px; height: 18px; stroke-width: 2px; }
+
+  /* FILTER PANEL */
   .filter-panel {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
-    width: 90%; max-width: 360px; background: white; padding: 1.5rem;
-    border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-    z-index: 1000; opacity: 0; pointer-events: none; transition: 0.2s;
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95);
+    width: 90%; max-width: 380px;
+    background: white; border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgb(0 0 0/0.25);
+    padding: 1.5rem; z-index: 1000;
+    opacity: 0; pointer-events: none; transition: all 0.2s;
   }
   .filter-panel.show { opacity: 1; pointer-events: all; transform: translate(-50%, -50%) scale(1); }
-  .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; display: none; }
-  .backdrop.show { display: block; }
-  
-  .chk-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-height: 200px; overflow-y: auto; margin: 10px 0; }
-  .chk-item { display: flex; gap: 8px; font-size: 0.85rem; align-items: center; }
-  
-  /* DROP ZONE */
-  .drop-zone {
-    border: 2px dashed #cbd5e1; border-radius: 12px; padding: 3rem 1rem;
-    text-align: center; margin: 1.5rem; cursor: pointer; color: #64748b;
+  .backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px);
+    z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.3s;
   }
-  .drop-zone:hover { border-color: var(--primary); background: #f0f9ff; color: var(--primary); }
+  .backdrop.show { opacity: 1; pointer-events: all; }
 
-  /* TREE VIEW */
+  .fp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+  .fp-title { font-weight: 700; font-size: 1rem; }
+  .toggle { position: relative; display: inline-block; width: 40px; height: 22px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px; }
+  .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+  input:checked + .slider { background-color: var(--primary); }
+  input:checked + .slider:before { transform: translateX(18px); }
+
+  .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-height: 250px; overflow-y: auto; margin-bottom: 1rem; }
+  .chk-label { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer; padding: 4px 0; }
+  .chk-label input { width: 18px; height: 18px; accent-color: var(--primary); }
+
+  .drop-zone {
+    border: 2px dashed #cbd5e1; border-radius: 12px; padding: 3rem 1.5rem;
+    text-align: center; background: white; margin: 1.5rem;
+    transition: all 0.2s; cursor: pointer; color: var(--text-muted);
+  }
+  .drop-zone:hover { border-color: var(--primary); background: #f8fafc; color: var(--primary); }
+  .drop-zone svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.6; }
+
   .tree-container {
-    background: #0f172a; /* Dark theme default for code */
-    color: #e2e8f0;
-    padding: 1.5rem; font-family: "Consolas", "Monaco", monospace; font-size: 13.5px;
+    background: var(--code-bg); color: var(--code-text);
+    padding: 1.25rem; font-family: "Fira Code", monospace; font-size: 13.5px;
     overflow-x: auto; min-height: 400px; display: none;
-    line-height: 1.6;
+    border-radius: 0 0 16px 16px;
   }
   .tree-container.show { display: block; }
-
-  /* --- HIERARCHY LINES (PENTING) --- */
-  .t-children {
-    padding-left: 20px; 
-    border-left: 2px solid #334155; /* Garis default tebal */
-    margin-left: 7px;
-  }
   
-  .t-node { display: block; white-space: nowrap; }
-  .t-head { display: flex; align-items: center; border-radius: 4px; padding: 2px 0; cursor: pointer; }
+  .t-node { display: block; white-space: nowrap; line-height: 1.6; }
+  .t-head { display: flex; align-items: center; cursor: pointer; border-radius: 4px; }
   .t-head:hover { background: rgba(255,255,255,0.1); }
-
-  /* Icons */
-  .t-arrow { width: 14px; height: 14px; margin-right: 4px; color: #94a3b8; transition: 0.2s; }
+  
+  .t-icon { width: 18px; height: 18px; margin-right: 8px; flex-shrink: 0; }
+  .t-arrow { width: 16px; height: 16px; margin-right: 2px; transition: transform 0.2s; opacity: 0.7; }
   .t-node.collapsed .t-arrow { transform: rotate(-90deg); }
+  
+  /* PERBAIKAN: Border left diperjelas (1.5px) */
+  .t-children { padding-left: 20px; border-left: 1.5px solid var(--line-color); margin-left: 8px; }
   .t-node.collapsed .t-children { display: none; }
-  .t-icon { width: 16px; height: 16px; margin-right: 8px; }
-
-  /* File Colors */
+  
   .c-folder { color: #fbbf24; } 
-  .c-js { color: #facc15; } .c-html { color: #f87171; } .c-css { color: #22d3ee; } 
-  .c-json { color: #a3e635; } .c-img { color: #4ade80; } .c-def { color: #94a3b8; }
-  
-  .t-meta { font-size: 11px; color: #64748b; margin-right: 10px; min-width: 50px; text-align: right; }
-  .t-comment { color: #34d399; font-style: italic; opacity: 0.7; font-size: 12px; margin-left: 8px; }
+  .c-js { color: #facc15; } .c-ts { color: #60a5fa; } .c-html { color: #f87171; } 
+  .c-css { color: #22d3ee; } .c-json { color: #a3e635; } .c-md { color: #c084fc; } .c-img { color: #4ade80; } .c-def { color: #94a3b8; }
+  .t-meta { font-size: 11px; color: #64748b; margin-right: 12px; min-width: 45px; text-align: right; }
+  .t-comment { color: #34d399; font-style: italic; opacity: 0.8; font-size: 12px; border-bottom: 1px dashed transparent; }
 
-  /* --- EXPORT MODE (Agar Screenshot Jelas) --- */
-  .tree-container.export-mode {
-    background: #000000 !important; /* Hitam pekat */
-    padding: 2rem !important;
-  }
-  .tree-container.export-mode .t-children {
-    border-left: 2px solid #555 !important; /* Garis abu terang saat export */
-  }
-  .tree-container.export-mode .t-meta { display: none; } /* Sembunyikan size saat foto biar bersih */
-  
-  /* Loading & Toast */
-  .loading-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.9); z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; }
+  .loading-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.95); z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; border-radius: 16px; }
   .loading-overlay.active { opacity: 1; pointer-events: all; }
-  .toast { position: fixed; bottom: 2rem; left: 50%; transform: translate(-50%, 100px); background: #10b981; color: white; padding: 10px 20px; border-radius: 50px; font-weight: 600; opacity: 0; transition: 0.3s; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-  .toast.show { transform: translate(-50%, 0); opacity: 1; }
+  .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
   
+  .toast { position: fixed; bottom: 2rem; left: 50%; transform: translate(-50%, 100px); background: #10b981; color: white; padding: 0.8rem 1.5rem; border-radius: 50px; transition: 0.4s; opacity: 0; z-index: 2000; font-weight: 600; box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4); display: flex; gap: 8px; align-items: center; }
+  .toast.show { transform: translate(-50%, 0); opacity: 1; }
   #pick { display: none; }
 </style>
 </head>
@@ -128,219 +141,292 @@
 
 <div class="container">
   <header>
-    <div class="brand">📂 ProjectTree</div>
-    <button class="btn" style="width:auto" onclick="window.location.reload()">Reset</button>
+    <div class="brand">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+      <h1>ProjectTree</h1>
+    </div>
+    <button class="btn" style="width:auto; padding:0 1.2rem;" onclick="window.location.reload()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      Reset
+    </button>
   </header>
 
   <div class="card">
-    <div id="loading" class="loading-overlay">Processing...</div>
+    <div id="loading" class="loading-overlay"><div class="spinner"></div><div class="loading-text">Processing...</div></div>
 
     <div class="toolbar">
-      <button id="btnFilter" class="btn">⚙️ Filter Settings</button>
-      <div class="row-group">
-        <select id="selStyle"><option value="unicode">Style: Unicode</option><option value="ascii">Style: ASCII</option></select>
+      <button id="btnFilterToggle" class="btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+        Filter Settings
+      </button>
+
+      <div class="grid-row-2 mobile-row">
+        <select id="selStyle">
+          <option value="unicode">Style: ├──</option>
+          <option value="ascii">Style: |--</option>
+        </select>
         <input id="inpExt" type="text" placeholder="Ext (.js, .py)" />
       </div>
-      <div class="row-group">
-        <button id="btnCopy" class="btn">📋 Copy</button>
-        <button id="btnJson" class="btn">JSON</button>
-        <button id="btnImg" class="btn" style="background:#0f172a; color:white; border:none">📸 IMG</button>
+
+      <div class="grid-row-3 mobile-row">
+        <button id="btnCopy" class="btn" title="Copy Text">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+        </button>
+        <button id="btnJson" class="btn" title="Download JSON">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M10 12a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1"/><path d="M14 16a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/></svg>
+        </button>
+        <button id="btnImg" class="btn" title="Download PNG">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </button>
       </div>
     </div>
 
     <div id="backdrop" class="backdrop"></div>
     <div id="filterPanel" class="filter-panel">
-      <h3>Ignore Settings</h3>
-      <div style="margin:10px 0; display:flex; gap:10px; align-items:center;">
-        <span>Enabled</span> <input type="checkbox" id="masterToggle" checked>
+      <div class="fp-header">
+        <span class="fp-title">Ignore Filters</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:0.85rem;">Enabled</span>
+          <label class="toggle"><input type="checkbox" id="masterFilterToggle" checked><span class="slider"></span></label>
+        </div>
       </div>
-      <div id="filterGrid" class="chk-list"></div>
-      <input id="inpIgnore" type="text" placeholder="Manual: assets, *.log" />
-      <button class="btn" style="margin-top:10px; background:var(--primary); color:white" onclick="toggleFilter(false)">Done</button>
+      <div id="filterGrid" class="filter-grid"></div>
+      <div style="border-top:1px solid #e2e8f0; margin:15px 0 10px 0;"></div>
+      <div style="font-size:0.85rem; color:#64748b; margin-bottom:6px;">Manual Blacklist:</div>
+      <input id="inpIgnore" type="text" placeholder="e.g. assets, secrets" />
+      <button class="btn btn-active" style="width:100%; margin-top:1rem;" onclick="toggleFilter(false)">Done</button>
     </div>
 
     <div id="dropZone" class="drop-zone">
-      <h3>Tap / Drag Folder Here</h3>
-      <p>Browser tidak mendeteksi folder kosong (0 file).</p>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><path d="M12 11v6"/><path d="M9 14l3 3 3-3"/></svg>
+      <div style="font-weight:700; font-size:1.1rem; color: var(--text)">Tap to Select Folder</div>
+      <div style="font-size:0.9rem; margin-top:0.4rem">or Drag & Drop anywhere</div>
     </div>
+
     <div id="treeContainer" class="tree-container"></div>
   </div>
 </div>
-<div id="toast" class="toast">Action Success!</div>
+
 <input type="file" id="pick" webkitdirectory multiple />
+<div id="toast" class="toast">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+  <span>Action Successful</span>
+</div>
 
 <script>
-/* --- CONFIG & STATE --- */
-const COMMON = ["node_modules", ".git", ".vscode", "dist", "build", "coverage", "__pycache__", ".DS_Store", "logs", ".env", "venv"];
-let allFiles = [], activeFilters = new Set(COMMON), isFilterOn = true;
+/* CONFIG */
+const COMMON_IGNORES = [
+  "node_modules", "bower_components", ".venv", "env", "__pycache__", "vendor",
+  ".git", ".svn", ".vscode", ".idea", ".DS_Store", "Thumbs.db",
+  "dist", "build", "out", "target", "bin", "obj", "coverage", ".next", ".nuxt",
+  "logs", "*.log", "*.sqlite", "*.db", "tmp", "secrets"
+];
+
+/* STATE */
+let allFilesRef = [];
+let activeFilters = new Set(COMMON_IGNORES);
+let isFilterEnabled = true;
+// PERBAIKAN: Menyimpan hasil tree terakhir untuk JSON export
+let exportedTreeData = null; 
 
 const els = {
   pick: document.getElementById('pick'), drop: document.getElementById('dropZone'),
-  tree: document.getElementById('treeContainer'), backdrop: document.getElementById('backdrop'),
-  panel: document.getElementById('filterPanel'), grid: document.getElementById('filterGrid'),
-  loading: document.getElementById('loading'), toast: document.getElementById('toast')
+  tree: document.getElementById('treeContainer'), ignoreInput: document.getElementById('inpIgnore'),
+  extInput: document.getElementById('inpExt'), filterPanel: document.getElementById('filterPanel'),
+  backdrop: document.getElementById('backdrop'), filterGrid: document.getElementById('filterGrid'), 
+  masterToggle: document.getElementById('masterFilterToggle'), loading: document.getElementById('loading')
 };
 
-/* --- INIT --- */
-COMMON.forEach(f => {
-  const div = document.createElement('div'); div.className='chk-item';
-  const chk = document.createElement('input'); chk.type='checkbox'; chk.checked=true; chk.value=f;
-  chk.onchange = () => { chk.checked ? activeFilters.add(f) : activeFilters.delete(f); reProcess(); };
-  div.append(chk, f); els.grid.appendChild(div);
-});
-
-/* --- ACTIONS --- */
-function toggleFilter(show) {
-  els.panel.classList.toggle('show', show); els.backdrop.classList.toggle('show', show);
+/* INIT */
+function initFilters() {
+  els.filterGrid.innerHTML = '';
+  COMMON_IGNORES.sort().forEach(item => {
+    const label = document.createElement('label'); label.className = 'chk-label';
+    const chk = document.createElement('input'); chk.type = 'checkbox'; chk.value = item; chk.checked = true;
+    chk.onchange = () => {
+      chk.checked ? activeFilters.add(item) : activeFilters.delete(item);
+      if(allFilesRef.length) processFiles(allFilesRef, true);
+    };
+    label.appendChild(chk); label.appendChild(document.createTextNode(item));
+    els.filterGrid.appendChild(label);
+  });
 }
-document.getElementById('btnFilter').onclick = () => toggleFilter(true);
+initFilters();
+
+/* UI FUNCTIONS */
+function toggleFilter(show) {
+  const method = show ? 'add' : 'remove';
+  els.filterPanel.classList[method]('show');
+  els.backdrop.classList[method]('show');
+}
+document.getElementById('btnFilterToggle').onclick = () => toggleFilter(true);
 els.backdrop.onclick = () => toggleFilter(false);
 
-document.getElementById('masterToggle').onchange = (e) => {
-  isFilterOn = e.target.checked; reProcess();
+els.masterToggle.onchange = () => {
+  isFilterEnabled = els.masterToggle.checked;
+  els.filterPanel.querySelectorAll('input:not(#masterFilterToggle)').forEach(i => i.disabled = !isFilterEnabled);
+  els.filterGrid.style.opacity = isFilterEnabled ? "1" : "0.5";
+  if(allFilesRef.length) processFiles(allFilesRef, true);
 };
-document.getElementById('inpIgnore').oninput = reProcess;
-document.getElementById('inpExt').oninput = reProcess;
 
-function reProcess() { if(allFiles.length) processFiles(allFiles, true); }
-
-/* --- CORE LOGIC --- */
+/* EVENTS */
 els.drop.onclick = () => els.pick.click();
 els.pick.onchange = () => processFiles(Array.from(els.pick.files));
+els.ignoreInput.oninput = () => { if(allFilesRef.length) processFiles(allFilesRef, true); };
+els.extInput.oninput = () => { if(allFilesRef.length) processFiles(allFilesRef, true); };
 
-document.body.addEventListener('dragover', e => { e.preventDefault(); document.body.style.background = '#e0f2fe'; });
-document.body.addEventListener('drop', e => { 
-  e.preventDefault(); document.body.style.background = ''; 
-  if(e.dataTransfer.files.length) processFiles(Array.from(e.dataTransfer.files));
-});
+/* CORE LOGIC */
+async function processFiles(files, isReRun = false) {
+  if (!files.length) return;
+  if (!isReRun) allFilesRef = files;
 
-async function processFiles(files, rerun=false) {
-  if(!rerun) allFiles = files;
   els.loading.classList.add('active');
-  await new Promise(r => setTimeout(r, 20));
+  await new Promise(r => setTimeout(r, 30));
 
-  if(!rerun) { els.drop.style.display='none'; els.tree.classList.add('show'); }
-  els.tree.innerHTML = '';
-
-  const root = { name: "root", type: "folder", children: {}, count: 0 };
-  const custom = document.getElementById('inpIgnore').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const exts = document.getElementById('inpExt').value.split(',').map(s=>s.trim()).filter(Boolean);
-
-  for (const f of files) {
-    if(isFilterOn) {
-      const parts = f.webkitRelativePath.split('/');
-      if (parts.some(p => activeFilters.has(p) || custom.some(c => c.startsWith('*')?p.endsWith(c.slice(1)):p===c))) continue;
-    }
-    if (exts.length && !exts.some(e => f.name.endsWith(e))) continue;
-
-    let curr = root;
-    const parts = f.webkitRelativePath.split('/');
-    for (let i = 0; i < parts.length; i++) {
-      const p = parts[i], isFile = i === parts.length-1;
-      if (!curr.children[p]) curr.children[p] = { name: p, type: isFile?'file':'folder', children: {}, count: 0, size: isFile?f.size:0 };
-      curr = curr.children[p];
-    }
-  }
-
-  calcStats(root); sortTree(root);
-  const data = root.children[Object.keys(root.children)[0]];
-  
-  if(data) els.tree.appendChild(renderDOM(data));
-  else els.tree.innerHTML = '<div style="text-align:center; padding:2rem; color:#aaa">Folder kosong atau semua file ter-filter.</div>';
-  
-  els.loading.classList.remove('active');
-}
-
-/* --- RENDER --- */
-function renderDOM(n) {
-  const isF = n.type === 'folder';
-  const el = document.createElement('div'); el.className = 't-node';
-  const head = document.createElement('div'); head.className = 't-head';
-  
-  head.innerHTML = `
-    <span class="t-arrow">${isF ? '▼' : ''}</span>
-    <span class="t-icon">${isF ? '📁' : '📄'}</span>
-    <span style="color:${getColor(n.name, isF)}">${n.name}</span>
-    <span class="t-meta">${isF ? '' : sizeStr(n.size)}</span>
-    <span class="t-comment" contenteditable="true" spellcheck="false" onclick="event.stopPropagation()"></span>
-  `;
-  
-  if(isF) {
-    head.onclick = (e) => { 
-      if(e.target.isContentEditable) return;
-      el.classList.toggle('collapsed'); 
-      const arr = head.querySelector('.t-arrow');
-      arr.innerText = el.classList.contains('collapsed') ? '▶' : '▼';
-    };
-  } else {
-    head.querySelector('.t-arrow').style.visibility = 'hidden';
-  }
-
-  el.appendChild(head);
-  if(isF) {
-    const childs = document.createElement('div'); childs.className = 't-children';
-    for(let k in n.children) childs.appendChild(renderDOM(n.children[k]));
-    el.appendChild(childs);
-  }
-  return el;
-}
-
-/* --- EXPORT IMAGE FIX --- */
-document.getElementById('btnImg').onclick = () => {
-  if(!els.tree.firstChild) return;
-  const t = els.tree;
-  
-  // 1. Force High Contrast Mode
-  t.classList.add('export-mode');
-  
-  html2canvas(t, {
-    backgroundColor: "#000000", // Paksa background hitam pekat
-    scale: 2, // Resolusi tinggi
-    windowWidth: t.scrollWidth + 50
-  }).then(c => {
-    // 2. Remove Mode
-    t.classList.remove('export-mode');
+  try {
+    if(!isReRun) { els.drop.style.display = 'none'; els.tree.classList.add('show'); els.tree.innerHTML = ''; }
     
-    const a = document.createElement('a'); a.download = 'project-tree.png'; a.href = c.toDataURL(); a.click();
-    showToast("Image Downloaded");
-  });
-};
-
-document.getElementById('btnCopy').onclick = () => {
-  if(!els.tree.firstChild) return;
-  // Simple text builder
-  const build = (d, pre="", last=true) => {
-    let str = pre + (last?"└── ":"├── ") + d.querySelector('span:nth-child(3)').innerText + "\n";
-    const ch = d.querySelector('.t-children');
-    if(ch && !d.classList.contains('collapsed')) {
-      const kids = Array.from(ch.children);
-      kids.forEach((k, i) => str += build(k, pre+(last?"    ":"│   "), i===kids.length-1));
+    const customIgnore = els.ignoreInput.value.split(',').map(s=>s.trim()).filter(Boolean);
+    const allowedExts = els.extInput.value.split(',').map(s=>s.trim()).filter(Boolean);
+    
+    let gitIgnoreSet = new Set();
+    if(!isReRun && isFilterEnabled) {
+      const gitignore = files.find(f => f.name === ".gitignore");
+      if(gitignore) {
+        try { const txt = await gitignore.text(); txt.split(/\r?\n/).forEach(l=>{l=l.trim(); if(l&&!l.startsWith('#')) gitIgnoreSet.add(l.replace(/\/$/,''));}); } catch(e){}
+      }
     }
-    return str;
-  };
-  navigator.clipboard.writeText(build(els.tree.firstChild, "", true));
-  showToast("Copied to Clipboard");
+
+    const root = { name: "root", type: "folder", children: {}, size: 0, count: 0 };
+    const CHUNK = 3000;
+    
+    for (let i = 0; i < files.length; i += CHUNK) {
+      const chunk = files.slice(i, i+CHUNK);
+      if(!isReRun && i>0) await new Promise(r => setTimeout(r, 0));
+
+      for (const f of chunk) {
+        if (isFilterEnabled) {
+          const parts = f.webkitRelativePath.split('/');
+          const shouldIgnore = parts.some(p => activeFilters.has(p) || customIgnore.some(r => r.startsWith('*')?p.endsWith(r.slice(1)):p===r) || gitIgnoreSet.has(p));
+          if (shouldIgnore) continue;
+        }
+        if (allowedExts.length && !allowedExts.some(e => f.name.endsWith(e))) continue;
+
+        let curr = root;
+        const parts = f.webkitRelativePath.split('/');
+        for (let j = 0; j < parts.length; j++) {
+          const part = parts[j];
+          const isFile = (j === parts.length - 1);
+          if (!curr.children[part]) curr.children[part] = { name: part, type: isFile?"file":"folder", children: {}, size: isFile?f.size:0, count: 0 };
+          curr = curr.children[part];
+        }
+      }
+    }
+
+    calcStats(root); sortChildren(root);
+    
+    // PERBAIKAN: Simpan data tree ke variabel global untuk export JSON
+    exportedTreeData = root.children[Object.keys(root.children)[0]];
+    
+    els.tree.innerHTML = '';
+    if(!exportedTreeData) els.tree.innerHTML = '<div style="text-align:center;padding:3rem;color:#64748b">No files to show.<br><span style="font-size:0.8rem">Check filters or ignore settings.</span></div>';
+    else els.tree.appendChild(createDOM(exportedTreeData));
+
+  } catch(e) { console.error(e); alert('Error processing files'); } 
+  finally { els.loading.classList.remove('active'); }
+}
+
+/* HELPERS */
+function calcStats(n){ if(n.type==='file')return; let s=0,c=0; for(let k in n.children){ calcStats(n.children[k]); s+=n.children[k].size; c+=(n.children[k].type==='file'?1:n.children[k].count); } n.size=s; n.count=c; }
+function sortChildren(n){ if(n.type==='file')return; const k=Object.keys(n.children).sort((a,b)=>{const A=n.children[a],B=n.children[b]; return A.type!==B.type?(A.type==='folder'?-1:1):a.localeCompare(b);}); const o={}; k.forEach(x=>{o[x]=n.children[x];sortChildren(o[x])}); n.children=o; }
+
+/* RENDER */
+const ICONS = {
+  arrow: `<svg class="t-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>`,
+  folder: `<svg class="t-icon c-folder" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`,
+  file: `<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`
 };
 
-/* --- UTILS --- */
-function getColor(n, isF) {
-  if(isF) return '#fbbf24';
-  const ext = n.split('.').pop();
-  return {js:'#facc15', html:'#f87171', css:'#22d3ee', json:'#a3e635'}[ext] || '#e2e8f0';
+function createDOM(n) {
+  const isF = n.type === 'folder';
+  const d = document.createElement('div'); d.className = 't-node';
+  const h = document.createElement('div'); h.className = 't-head';
+  
+  const arr = document.createElement('span'); arr.innerHTML = isF ? ICONS.arrow : `<div class="t-arrow hidden" style="width:18px"></div>`;
+  if(isF) h.onclick = (e) => { if(!e.target.isContentEditable) d.classList.toggle('collapsed'); };
+  h.appendChild(arr);
+
+  const ico = document.createElement('span'); ico.innerHTML = isF ? ICONS.folder : ICONS.file;
+  if(!isF) ico.firstElementChild.classList.add(({js:'c-js',ts:'c-ts',html:'c-html',css:'c-css',json:'c-json',md:'c-md',png:'c-img',jpg:'c-img'}[n.name.split('.').pop().toLowerCase()]||'c-def'));
+  h.appendChild(ico);
+
+  const name = document.createElement('span'); name.textContent = n.name; name.className = 't-name'; h.appendChild(name);
+  const meta = document.createElement('span'); meta.className = 't-meta'; meta.textContent = isF ? `(${n.count})` : (n.size<1024?n.size+' B':(n.size/1024).toFixed(1)+' KB'); h.appendChild(meta);
+  const com = document.createElement('span'); com.className = 't-comment'; com.contentEditable = true; com.spellcheck = false; com.onclick = e=>e.stopPropagation(); h.appendChild(com);
+
+  d.appendChild(h);
+  if(isF) { const c = document.createElement('div'); c.className = 't-children'; for(let k in n.children) c.appendChild(createDOM(n.children[k])); d.appendChild(c); }
+  return d;
 }
-function sizeStr(b) { return b<1024?b+'B':(b/1024).toFixed(1)+'KB'; }
-function calcStats(n) { if(n.type==='file')return; for(let k in n.children) calcStats(n.children[k]); }
-function sortTree(n) { 
-  if(n.type==='file')return; 
-  const k=Object.keys(n.children).sort((a,b)=>{
-    const A=n.children[a], B=n.children[b];
-    return A.type!==B.type ? (A.type==='folder'?-1:1) : a.localeCompare(b);
-  });
-  const o={}; k.forEach(x=>{o[x]=n.children[x]; sortTree(o[x])}); n.children=o;
+
+/* ACTIONS */
+['dragenter','dragover'].forEach(e=>document.body.addEventListener(e,ev=>{ev.preventDefault();document.body.classList.add('drag-active')}));
+['dragleave','drop'].forEach(e=>document.body.addEventListener(e,ev=>{ev.preventDefault();if(e==='drop'||!ev.relatedTarget)document.body.classList.remove('drag-active')}));
+document.body.addEventListener('drop', ev=>{ if(ev.dataTransfer.files.length) processFiles(Array.from(ev.dataTransfer.files)); });
+
+document.getElementById('btnCopy').onclick = () => { 
+  if(els.tree.firstChild) { 
+    navigator.clipboard.writeText(domToText(els.tree.firstChild,"",true,document.getElementById('selStyle').value)); 
+    showToast('Copied to Clipboard!');
+  }
+};
+
+// PERBAIKAN: Tombol JSON sekarang mengunduh variabel exportedTreeData
+document.getElementById('btnJson').onclick = () => { 
+  if(exportedTreeData) { 
+    const a = document.createElement('a'); 
+    a.download = 'structure.json'; 
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(exportedTreeData, null, 2)], {type:'application/json'})); 
+    a.click(); 
+  } else {
+    showToast('No Data to Export');
+  }
+};
+
+// PERBAIKAN: Konfigurasi html2canvas agar border tertangkap jelas
+document.getElementById('btnImg').onclick = () => { 
+  if(els.tree.firstChild) {
+    showToast('Generating Image...');
+    html2canvas(els.tree, {
+      backgroundColor: "#0f172a", // Background gelap solid
+      scale: 2, // Resolusi tinggi
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: els.tree.scrollWidth,
+      windowHeight: els.tree.scrollHeight
+    }).then(c=>{
+      const a = document.createElement('a');
+      a.download = 'project-structure.png';
+      a.href = c.toDataURL();
+      a.click();
+    });
+  }
+};
+
+function domToText(d,p,l,s){
+  if(!d)return""; const name=d.querySelector('.t-name').textContent, comm=d.querySelector('.t-comment').textContent;
+  const c = s==="unicode" ? {b:"├── ",l:"└── ",v:"│   ",s:"    "} : {b:"|-- ",l:"`-- ",v:"|   ",s:"    "};
+  let line = (p===""&&l)?name:p+(l?c.l:c.b)+name; if(comm)line+="  # "+comm; line+="\n";
+  const ch = d.querySelector('.t-children');
+  if(ch&&!d.classList.contains('collapsed')) Array.from(ch.children).forEach((x,i,arr)=>line+=domToText(x,(p===""&&l)?"":p+(l?c.s:c.v),i===arr.length-1,s));
+  return line;
 }
-function showToast(m) { 
-  els.toast.textContent=m; els.toast.classList.add('show'); 
-  setTimeout(()=>els.toast.classList.remove('show'), 2000); 
+
+function showToast(msg) {
+  const t = document.querySelector('.toast');
+  t.querySelector('span').textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2000);
 }
 </script>
 </body>
