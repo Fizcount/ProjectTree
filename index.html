@@ -3,15 +3,16 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>ProjectTree Responsive</title>
+<title>ProjectTree UI Remastered</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
   :root {
     --primary: #3b82f6; --primary-hover: #2563eb;
-    --bg: #f8fafc; --surface: #ffffff;
-    --border: #e2e8f0; --text: #334155; --text-muted: #94a3b8;
-    --code-bg: #1e293b; --code-text: #e2e8f0; --line-color: #475569;
+    --bg: #f1f5f9; --surface: #ffffff;
+    --border: #cbd5e1; --text: #1e293b; --text-muted: #64748b;
+    --code-bg: #0f172a; --code-text: #e2e8f0; --line-color: #334155;
+    --control-h: 44px; /* Tinggi standar tombol agar enak di jari */
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -19,140 +20,146 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background-color: var(--bg); color: var(--text);
     padding: 1.5rem 1rem; line-height: 1.5; min-height: 100vh;
-    transition: background 0.2s;
   }
-  body.drag-active { background-color: #eff6ff; }
+  body.drag-active .card { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2); }
   
   .container { max-width: 1100px; margin: 0 auto; position: relative; }
 
   /* HEADER */
   header { margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
   .brand { display: flex; align-items: center; gap: 10px; }
-  .brand h1 { font-size: 1.25rem; font-weight: 800; color: #0f172a; }
+  .brand h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
 
-  /* CARD & TOOLBAR */
+  /* CARD WRAPPER */
   .card {
-    background: var(--surface); border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0/0.1); border: 1px solid var(--border);
-    overflow: visible; 
-    margin-bottom: 1.5rem; position: relative; min-height: 300px;
+    background: var(--surface); border-radius: 16px;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0/0.05); border: 1px solid var(--border);
+    overflow: visible; position: relative; min-height: 300px;
   }
 
+  /* --- TOOLBAR GRID SYSTEM (MOBILE FIRST) --- */
   .toolbar {
     padding: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;
-    display: flex; flex-wrap: wrap; gap: 8px; align-items: center; position: relative;
-    z-index: 20;
-  }
-  
-  .group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-
-  /* BUTTONS & INPUTS */
-  .btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 0.5rem 0.75rem; border-radius: 6px;
-    font-weight: 500; font-size: 0.85rem; cursor: pointer;
-    border: 1px solid var(--border); background: white; color: var(--text);
-    transition: all 0.2s; user-select: none;
-  }
-  .btn:hover { background: #f1f5f9; border-color: #94a3b8; }
-  .btn.active { background: #e0f2fe; border-color: var(--primary); color: var(--primary); }
-  
-  input[type="text"], select {
-    padding: 0.5rem 0.6rem; border: 1px solid #cbd5e1;
-    border-radius: 6px; font-size: 0.85rem; color: var(--text);
+    border-radius: 16px 16px 0 0;
+    display: grid; 
+    gap: 10px;
+    /* Default Mobile: 1 kolom penuh */
+    grid-template-columns: 1fr; 
   }
 
-  /* --- RESPONSIVE FILTER PANEL --- */
-  .filter-panel {
-    position: absolute; top: 100%; left: 0; margin-top: 8px;
-    background: white; border: 1px solid var(--border);
-    border-radius: 12px; box-shadow: 0 10px 25px -5px rgb(0 0 0/0.15);
-    width: 320px; padding: 1.25rem;
-    z-index: 999; display: none;
-  }
-  
-  /* MEDIA QUERY KHUSUS MOBILE */
-  @media (max-width: 640px) {
-    .filter-panel {
-      position: fixed; /* Fix ke layar, bukan ke tombol */
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%); /* Tengahkan persis */
-      width: 90%; /* Lebar responsif */
-      max-width: 360px;
-      margin-top: 0;
-      /* Tambahkan efek shadow gelap di belakang popup */
-      box-shadow: 0 0 0 100vmax rgba(0,0,0,0.6), 0 20px 25px -5px rgb(0 0 0/0.2); 
+  /* Responsive Layout */
+  @media (min-width: 640px) {
+    .toolbar {
+      grid-template-columns: auto 1fr auto; /* Desktop: Sebaris */
+      align-items: center;
     }
+    .mobile-row { display: contents; } /* Unwrap groups on desktop */
   }
 
-  .filter-panel.show { display: block; animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-  @keyframes popIn { from { opacity: 0; transform: translate(-50%, -45%) scale(0.95); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
-  /* Reset animation for desktop */
-  @media (min-width: 641px) {
-    @keyframes popIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+  /* Grouping helper for mobile grid */
+  .grid-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  /* CONTROLS (BUTTONS & INPUTS) */
+  .btn, input[type="text"], select {
+    height: var(--control-h);
+    padding: 0 1rem;
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 0.9rem; font-weight: 500;
+    background: white; color: var(--text);
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.2s; width: 100%; /* Full width in grid cells */
   }
   
+  /* Inputs specific */
+  input[type="text"] { text-align: left; justify-content: flex-start; }
+  input[type="text"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); }
+
+  /* Button States */
+  .btn { cursor: pointer; user-select: none; }
+  .btn:active { transform: translateY(1px); }
+  .btn:hover { background: #f1f5f9; border-color: #94a3b8; }
+  .btn.active { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
+  .btn-icon-only { padding: 0; } /* Untuk tombol icon kotak */
+
+  /* Icon styling inside buttons */
+  .btn svg { width: 18px; height: 18px; stroke-width: 2px; }
+
+  /* --- FILTER POPUP (CENTER MODAL) --- */
+  .filter-panel {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95);
+    width: 90%; max-width: 380px;
+    background: white; border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgb(0 0 0/0.25);
+    padding: 1.5rem; z-index: 1000;
+    opacity: 0; pointer-events: none; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .filter-panel.show { opacity: 1; pointer-events: all; transform: translate(-50%, -50%) scale(1); }
+  
+  /* Backdrop overlay */
+  .backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px);
+    z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .backdrop.show { opacity: 1; pointer-events: all; }
+
+  /* Filter content */
   .fp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
-  .fp-title { font-weight: 700; font-size: 0.95rem; }
+  .fp-title { font-weight: 700; font-size: 1rem; }
   
-  .toggle { position: relative; display: inline-block; width: 36px; height: 20px; }
+  .toggle { position: relative; display: inline-block; width: 40px; height: 22px; }
   .toggle input { opacity: 0; width: 0; height: 0; }
-  .slider { position: absolute; cursor: pointer; inset: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-  .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+  .slider { position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px; }
+  .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
   input:checked + .slider { background-color: var(--primary); }
-  input:checked + .slider:before { transform: translateX(16px); }
+  input:checked + .slider:before { transform: translateX(18px); }
 
-  .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-height: 250px; overflow-y: auto; margin-bottom: 1rem; }
-  .chk-label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); }
-  .chk-label:hover { color: var(--primary); }
-  .chk-label input { accent-color: var(--primary); width: 16px; height: 16px; }
+  .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-height: 250px; overflow-y: auto; margin-bottom: 1rem; }
+  .chk-label { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer; padding: 4px 0; }
+  .chk-label input { width: 18px; height: 18px; accent-color: var(--primary); }
 
-  /* DROP ZONE */
+  /* --- DROP ZONE --- */
   .drop-zone {
-    border: 2px dashed #cbd5e1; border-radius: 8px; padding: 2.5rem 1rem;
-    text-align: center; background: white; margin: 1rem;
+    border: 2px dashed #cbd5e1; border-radius: 12px; padding: 3rem 1.5rem;
+    text-align: center; background: white; margin: 1.5rem;
     transition: all 0.2s; cursor: pointer; color: var(--text-muted);
   }
-  .drop-zone:hover { border-color: var(--primary); background: #f0f9ff; color: var(--primary); }
-  .drop-zone-icon { width: 40px; height: 40px; margin-bottom: 10px; opacity: 0.5; }
+  .drop-zone:hover { border-color: var(--primary); background: #f8fafc; color: var(--primary); }
+  .drop-zone svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.6; }
 
-  /* TREE CONTAINER */
+  /* --- TREE VIEW --- */
   .tree-container {
     background: var(--code-bg); color: var(--code-text);
-    padding: 1rem; font-family: "Fira Code", monospace; font-size: 13px;
+    padding: 1.25rem; font-family: "Fira Code", monospace; font-size: 13.5px;
     overflow-x: auto; min-height: 400px; display: none;
-    -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+    border-radius: 0 0 16px 16px;
   }
   .tree-container.show { display: block; }
   
-  /* Tree Styles */
-  .t-node { display: block; white-space: nowrap; }
-  .t-head { display: flex; align-items: center; padding: 3px 0; cursor: pointer; user-select: none; }
-  .t-head:hover { background: rgba(255,255,255,0.05); }
-  .indent { display: inline-block; width: 20px; height: 100%; border-right: 1px solid transparent; flex-shrink: 0; }
-  .t-children { padding-left: 19px; border-left: 1px solid var(--line-color); margin-left: 7px; }
-  .t-node.collapsed .t-children { display: none; }
+  .t-node { display: block; white-space: nowrap; line-height: 1.6; }
+  .t-head { display: flex; align-items: center; cursor: pointer; border-radius: 4px; }
+  .t-head:hover { background: rgba(255,255,255,0.1); }
   
-  .t-icon { width: 16px; height: 16px; margin-right: 8px; flex-shrink: 0; }
-  .t-arrow { width: 14px; height: 14px; margin-right: 4px; transition: transform 0.2s; opacity: 0.7; }
+  .t-icon { width: 18px; height: 18px; margin-right: 8px; flex-shrink: 0; }
+  .t-arrow { width: 16px; height: 16px; margin-right: 2px; transition: transform 0.2s; opacity: 0.7; }
   .t-node.collapsed .t-arrow { transform: rotate(-90deg); }
-  .t-arrow.hidden { visibility: hidden; }
   
-  .c-folder { color: #fcd34d; } .c-def { color: #94a3b8; }
-  .c-js { color: #f59e0b; } .c-ts { color: #3b82f6; } .c-html { color: #ef4444; } 
-  .c-css { color: #06b6d4; } .c-json { color: #84cc16; } .c-md { color: #a855f7; } .c-img { color: #10b981; }
+  .c-folder { color: #fbbf24; } 
+  .c-js { color: #facc15; } .c-ts { color: #60a5fa; } .c-html { color: #f87171; } 
+  .c-css { color: #22d3ee; } .c-json { color: #a3e635; } .c-md { color: #c084fc; } .c-img { color: #4ade80; } .c-def { color: #94a3b8; }
 
-  .t-meta { font-size: 10px; color: #64748b; margin-right: 10px; min-width: 40px; text-align: right; }
-  .t-comment { color: #10b981; font-style: italic; opacity: 0.7; font-size: 12px; margin-left: 5px; min-width: 20px; border-bottom: 1px dashed transparent; }
-  .t-comment:focus { opacity: 1; border-bottom-color: #10b981; }
+  .t-meta { font-size: 11px; color: #64748b; margin-right: 12px; min-width: 45px; text-align: right; }
+  .t-comment { color: #34d399; font-style: italic; opacity: 0.8; font-size: 12px; border-bottom: 1px dashed transparent; }
+  .t-comment:focus { opacity: 1; border-bottom-color: #34d399; }
 
   /* LOADING & TOAST */
-  .loading-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.95); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .loading-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.95); z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; border-radius: 16px; }
   .loading-overlay.active { opacity: 1; pointer-events: all; }
-  .spinner { width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1rem; }
+  .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1rem; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .toast { position: fixed; bottom: 2rem; right: 2rem; left: 2rem; text-align:center; background: #10b981; color: white; padding: 0.75rem 1.25rem; border-radius: 8px; transform: translateY(100px); transition: 0.3s; opacity: 0; z-index: 2000; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: auto; margin: 0 auto; max-width: 300px; }
-  .toast.show { transform: translateY(0); opacity: 1; }
+  
+  .toast { position: fixed; bottom: 2rem; left: 50%; transform: translate(-50%, 100px); background: #10b981; color: white; padding: 0.8rem 1.5rem; border-radius: 50px; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; z-index: 2000; font-weight: 600; box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4); display: flex; gap: 8px; align-items: center; }
+  .toast.show { transform: translate(-50%, 0); opacity: 1; }
   #pick { display: none; }
 </style>
 </head>
@@ -161,65 +168,67 @@
 <div class="container">
   <header>
     <div class="brand">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
       <h1>ProjectTree</h1>
     </div>
-    <button class="btn" onclick="window.location.reload()">Reset</button>
+    <button class="btn" style="width:auto; padding:0 1.2rem;" onclick="window.location.reload()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      Reset
+    </button>
   </header>
 
   <div class="card">
-    <div id="loading" class="loading-overlay">
-      <div class="spinner"></div>
-      <div class="loading-text">Processing...</div>
-      <div id="loadingCount" style="font-size:0.8rem; color:#64748b; margin-top:5px"></div>
-    </div>
+    <div id="loading" class="loading-overlay"><div class="spinner"></div><div class="loading-text">Processing...</div></div>
 
     <div class="toolbar">
-      <div class="group" style="flex:1">
-        <div style="position: relative;">
-          <button id="btnFilterToggle" class="btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-            Filters
-          </button>
-          
-          <div id="filterPanel" class="filter-panel">
-            <div class="fp-header">
-              <span class="fp-title">Ignore Filters</span>
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:0.8rem;">On/Off</span>
-                <label class="toggle"><input type="checkbox" id="masterFilterToggle" checked><span class="slider"></span></label>
-              </div>
-            </div>
-            <div id="filterGrid" class="filter-grid"></div>
-            <div style="border-top:1px solid #e2e8f0; margin:10px 0;"></div>
-            <div style="font-size:0.8rem; color:#64748b; margin-bottom:4px;">Manual Ignore (Blacklist):</div>
-            <input id="inpIgnore" type="text" placeholder="e.g. assets, *.log" style="width:100%" />
-            
-            <div style="margin-top:1rem; text-align:right; display:none;" id="mobileCloseWrapper">
-               <button class="btn btn-primary" style="width:100%; justify-content:center" onclick="document.getElementById('btnFilterToggle').click()">Done</button>
-            </div>
-          </div>
-        </div>
+      
+      <button id="btnFilterToggle" class="btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+        Filter Settings
+      </button>
 
-        <select id="selStyle" class="btn" style="max-width: 100px;">
-          <option value="unicode">Tree</option>
-          <option value="ascii">ASCII</option>
+      <div class="grid-row-2 mobile-row">
+        <select id="selStyle">
+          <option value="unicode">Style: ├──</option>
+          <option value="ascii">Style: |--</option>
         </select>
-        
-        <input id="inpExt" type="text" placeholder="Ext (.js)" style="width:80px" />
+        <input id="inpExt" type="text" placeholder="Ext (.js, .py)" />
       </div>
 
-      <div class="group">
-        <button id="btnCopy" class="btn">📋</button>
-        <button id="btnJson" class="btn">JSON</button>
-        <button id="btnImg" class="btn">IMG</button>
+      <div class="grid-row-3 mobile-row">
+        <button id="btnCopy" class="btn" title="Copy Text">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+          <span style="display:none">Copy</span> </button>
+        <button id="btnJson" class="btn" title="Download JSON">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M10 12a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1"/><path d="M14 16a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/></svg>
+        </button>
+        <button id="btnImg" class="btn" title="Download PNG">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </button>
       </div>
+
+    </div>
+
+    <div id="backdrop" class="backdrop"></div>
+    <div id="filterPanel" class="filter-panel">
+      <div class="fp-header">
+        <span class="fp-title">Ignore Filters</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:0.85rem;">Enabled</span>
+          <label class="toggle"><input type="checkbox" id="masterFilterToggle" checked><span class="slider"></span></label>
+        </div>
+      </div>
+      <div id="filterGrid" class="filter-grid"></div>
+      <div style="border-top:1px solid #e2e8f0; margin:15px 0 10px 0;"></div>
+      <div style="font-size:0.85rem; color:#64748b; margin-bottom:6px;">Manual Blacklist:</div>
+      <input id="inpIgnore" type="text" placeholder="e.g. assets, secrets" />
+      <button class="btn btn-active" style="width:100%; margin-top:1rem;" onclick="toggleFilter(false)">Done</button>
     </div>
 
     <div id="dropZone" class="drop-zone">
-      <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-      <div style="font-weight:600; font-size:1rem; color: var(--text)">Tap to Select Folder</div>
-      <div style="font-size:0.8rem; margin-top:0.4rem">or Drag & Drop</div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><path d="M12 11v6"/><path d="M9 14l3 3 3-3"/></svg>
+      <div style="font-weight:700; font-size:1.1rem; color: var(--text)">Tap to Select Folder</div>
+      <div style="font-size:0.9rem; margin-top:0.4rem">or Drag & Drop anywhere</div>
     </div>
 
     <div id="treeContainer" class="tree-container"></div>
@@ -227,35 +236,29 @@
 </div>
 
 <input type="file" id="pick" webkitdirectory multiple />
-<div id="toast" class="toast">Done!</div>
+<div id="toast" class="toast">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+  <span>Copied!</span>
+</div>
 
 <script>
 /* CONFIG */
 const COMMON_IGNORES = [
-  "node_modules", "bower_components", "venv", ".venv", "env", ".env", "__pycache__", ".tox", "vendor",
-  ".git", ".svn", ".hg", ".gitignore", ".vscode", ".idea", ".settings", ".project",
-  "dist", "build", "out", "target", "bin", "obj", "coverage", ".next", ".nuxt", ".cache",
-  "logs", "*.log", "*.sqlite", "*.db", ".DS_Store", "Thumbs.db", "tmp", "temp", "secrets"
+  "node_modules", "bower_components", ".venv", "env", "__pycache__", "vendor",
+  ".git", ".svn", ".vscode", ".idea", ".DS_Store", "Thumbs.db",
+  "dist", "build", "out", "target", "bin", "obj", "coverage", ".next", ".nuxt",
+  "logs", "*.log", "*.sqlite", "*.db", "tmp", "secrets"
 ];
 
 /* STATE */
-let allFilesRef = [];
-let activeFilters = new Set(COMMON_IGNORES);
-let isFilterEnabled = true;
-
+let allFilesRef = [], activeFilters = new Set(COMMON_IGNORES), isFilterEnabled = true;
 const els = {
   pick: document.getElementById('pick'), drop: document.getElementById('dropZone'),
   tree: document.getElementById('treeContainer'), ignoreInput: document.getElementById('inpIgnore'),
   extInput: document.getElementById('inpExt'), filterPanel: document.getElementById('filterPanel'),
-  filterGrid: document.getElementById('filterGrid'), btnFilterToggle: document.getElementById('btnFilterToggle'),
-  masterFilterToggle: document.getElementById('masterFilterToggle'), loading: document.getElementById('loading'),
-  loadingCount: document.getElementById('loadingCount')
+  backdrop: document.getElementById('backdrop'), filterGrid: document.getElementById('filterGrid'), 
+  masterToggle: document.getElementById('masterFilterToggle'), loading: document.getElementById('loading')
 };
-
-/* CHECK MOBILE */
-if(window.innerWidth <= 640) {
-  document.getElementById('mobileCloseWrapper').style.display = 'block';
-}
 
 /* INIT */
 function initFilters() {
@@ -264,7 +267,7 @@ function initFilters() {
     const label = document.createElement('label'); label.className = 'chk-label';
     const chk = document.createElement('input'); chk.type = 'checkbox'; chk.value = item; chk.checked = true;
     chk.onchange = () => {
-      if(chk.checked) activeFilters.add(item); else activeFilters.delete(item);
+      chk.checked ? activeFilters.add(item) : activeFilters.delete(item);
       if(allFilesRef.length) processFiles(allFilesRef, true);
     };
     label.appendChild(chk); label.appendChild(document.createTextNode(item));
@@ -273,41 +276,49 @@ function initFilters() {
 }
 initFilters();
 
-/* EVENT LISTENERS */
-els.btnFilterToggle.onclick = (e) => { e.stopPropagation(); els.filterPanel.classList.toggle('show'); els.btnFilterToggle.classList.toggle('active'); };
-document.addEventListener('click', (e) => { if (!els.filterPanel.contains(e.target) && e.target !== els.btnFilterToggle) { els.filterPanel.classList.remove('show'); els.btnFilterToggle.classList.remove('active'); }});
-els.masterFilterToggle.onchange = () => {
-  isFilterEnabled = els.masterFilterToggle.checked;
+/* UI FUNCTIONS */
+function toggleFilter(show) {
+  const method = show ? 'add' : 'remove';
+  els.filterPanel.classList[method]('show');
+  els.backdrop.classList[method]('show');
+}
+document.getElementById('btnFilterToggle').onclick = () => toggleFilter(true);
+els.backdrop.onclick = () => toggleFilter(false);
+
+els.masterToggle.onchange = () => {
+  isFilterEnabled = els.masterToggle.checked;
   els.filterPanel.querySelectorAll('input:not(#masterFilterToggle)').forEach(i => i.disabled = !isFilterEnabled);
   els.filterGrid.style.opacity = isFilterEnabled ? "1" : "0.5";
   if(allFilesRef.length) processFiles(allFilesRef, true);
 };
+
+/* EVENTS */
+els.drop.onclick = () => els.pick.click();
+els.pick.onchange = () => processFiles(Array.from(els.pick.files));
 els.ignoreInput.oninput = () => { if(allFilesRef.length) processFiles(allFilesRef, true); };
 els.extInput.oninput = () => { if(allFilesRef.length) processFiles(allFilesRef, true); };
 
-els.drop.onclick = () => els.pick.click();
-els.pick.onchange = () => processFiles(Array.from(els.pick.files));
-
-/* PROCESS LOGIC */
+/* CORE LOGIC */
 async function processFiles(files, isReRun = false) {
   if (!files.length) return;
   if (!isReRun) allFilesRef = files;
 
   els.loading.classList.add('active');
-  els.loadingCount.textContent = isReRun ? "Updating filters..." : `Scanning ${files.length} files...`;
-  await new Promise(r => setTimeout(r, 20));
+  await new Promise(r => setTimeout(r, 30)); // Yield UI
 
   try {
     if(!isReRun) { els.drop.style.display = 'none'; els.tree.classList.add('show'); els.tree.innerHTML = ''; }
     
-    // Filters
     const customIgnore = els.ignoreInput.value.split(',').map(s=>s.trim()).filter(Boolean);
     const allowedExts = els.extInput.value.split(',').map(s=>s.trim()).filter(Boolean);
-    const gitignore = files.find(f => f.name === ".gitignore");
-    let gitIgnoreSet = new Set();
     
-    if(gitignore && isFilterEnabled && !isReRun) {
-      try { const txt = await gitignore.text(); txt.split(/\r?\n/).forEach(l=>{ l=l.trim(); if(l&&!l.startsWith('#')) gitIgnoreSet.add(l.replace(/\/$/,'')); }); } catch(e){}
+    // Simple .gitignore parser (first run only for speed)
+    let gitIgnoreSet = new Set();
+    if(!isReRun && isFilterEnabled) {
+      const gitignore = files.find(f => f.name === ".gitignore");
+      if(gitignore) {
+        try { const txt = await gitignore.text(); txt.split(/\r?\n/).forEach(l=>{l=l.trim(); if(l&&!l.startsWith('#')) gitIgnoreSet.add(l.replace(/\/$/,''));}); } catch(e){}
+      }
     }
 
     const root = { name: "root", type: "folder", children: {}, size: 0, count: 0 };
@@ -339,33 +350,35 @@ async function processFiles(files, isReRun = false) {
     calcStats(root); sortChildren(root);
     const treeData = root.children[Object.keys(root.children)[0]];
     els.tree.innerHTML = '';
-    if(!treeData) els.tree.innerHTML = '<div style="text-align:center;padding:2rem;color:#94a3b8">All files hidden by filters.</div>';
+    if(!treeData) els.tree.innerHTML = '<div style="text-align:center;padding:3rem;color:#64748b">No files to show.<br><span style="font-size:0.8rem">Check filters or ignore settings.</span></div>';
     else els.tree.appendChild(createDOM(treeData));
 
-  } catch(e) { console.error(e); } 
+  } catch(e) { console.error(e); alert('Error processing files'); } 
   finally { els.loading.classList.remove('active'); }
 }
 
+/* HELPERS */
 function calcStats(n){ if(n.type==='file')return; let s=0,c=0; for(let k in n.children){ calcStats(n.children[k]); s+=n.children[k].size; c+=(n.children[k].type==='file'?1:n.children[k].count); } n.size=s; n.count=c; }
 function sortChildren(n){ if(n.type==='file')return; const k=Object.keys(n.children).sort((a,b)=>{const A=n.children[a],B=n.children[b]; return A.type!==B.type?(A.type==='folder'?-1:1):a.localeCompare(b);}); const o={}; k.forEach(x=>{o[x]=n.children[x];sortChildren(o[x])}); n.children=o; }
 
-/* RENDER */
+/* RENDER & ICONS */
 const ICONS = {
-  arrow: `<svg class="t-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>`,
+  arrow: `<svg class="t-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>`,
   folder: `<svg class="t-icon c-folder" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`,
   file: `<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`
 };
+
 function createDOM(n) {
   const isF = n.type === 'folder';
   const d = document.createElement('div'); d.className = 't-node';
   const h = document.createElement('div'); h.className = 't-head';
   
-  const arr = document.createElement('span'); arr.innerHTML = isF ? ICONS.arrow : `<div class="t-arrow hidden"></div>`;
+  const arr = document.createElement('span'); arr.innerHTML = isF ? ICONS.arrow : `<div class="t-arrow hidden" style="width:18px"></div>`;
   if(isF) h.onclick = (e) => { if(!e.target.isContentEditable) d.classList.toggle('collapsed'); };
   h.appendChild(arr);
 
   const ico = document.createElement('span'); ico.innerHTML = isF ? ICONS.folder : ICONS.file;
-  if(!isF) ico.firstElementChild.classList.add(({js:'c-js',ts:'c-ts',html:'c-html',css:'c-css',json:'c-json',md:'c-md',png:'c-img'}[n.name.split('.').pop().toLowerCase()]||'c-def'));
+  if(!isF) ico.firstElementChild.classList.add(({js:'c-js',ts:'c-ts',html:'c-html',css:'c-css',json:'c-json',md:'c-md',png:'c-img',jpg:'c-img'}[n.name.split('.').pop().toLowerCase()]||'c-def'));
   h.appendChild(ico);
 
   const name = document.createElement('span'); name.textContent = n.name; name.className = 't-name'; h.appendChild(name);
@@ -377,15 +390,19 @@ function createDOM(n) {
   return d;
 }
 
-/* GLOBAL DRAG */
+/* DRAG & ACTIONS */
 ['dragenter','dragover'].forEach(e=>document.body.addEventListener(e,ev=>{ev.preventDefault();document.body.classList.add('drag-active')}));
 ['dragleave','drop'].forEach(e=>document.body.addEventListener(e,ev=>{ev.preventDefault();if(e==='drop'||!ev.relatedTarget)document.body.classList.remove('drag-active')}));
 document.body.addEventListener('drop', ev=>{ if(ev.dataTransfer.files.length) processFiles(Array.from(ev.dataTransfer.files)); });
 
-/* ACTIONS */
-document.getElementById('btnCopy').onclick = () => { if(els.tree.firstChild) { navigator.clipboard.writeText(domToText(els.tree.firstChild,"",true,document.getElementById('selStyle').value)); els.toast.classList.add('show'); setTimeout(()=>els.toast.classList.remove('show'),2000); }};
-document.getElementById('btnJson').onclick = () => { if(fileStructure) { const a = document.createElement('a'); a.download = 'tree.json'; a.href = URL.createObjectURL(new Blob([JSON.stringify(fileStructure,null,2)], {type:'application/json'})); a.click(); } };
-document.getElementById('btnImg').onclick = () => { if(els.tree.firstChild) html2canvas(els.tree,{backgroundColor:"#1e293b",scale:2}).then(c=>{const a=document.createElement('a');a.download='tree.png';a.href=c.toDataURL();a.click()}); };
+document.getElementById('btnCopy').onclick = () => { 
+  if(els.tree.firstChild) { 
+    navigator.clipboard.writeText(domToText(els.tree.firstChild,"",true,document.getElementById('selStyle').value)); 
+    const t = document.getElementById('toast'); t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); 
+  }
+};
+document.getElementById('btnJson').onclick = () => { if(allFilesRef.length) { const a = document.createElement('a'); a.download = 'tree.json'; a.href = URL.createObjectURL(new Blob([JSON.stringify(createJSON(els.tree.firstChild),null,2)], {type:'application/json'})); a.click(); }};
+document.getElementById('btnImg').onclick = () => { if(els.tree.firstChild) html2canvas(els.tree,{backgroundColor:"#0f172a",scale:2}).then(c=>{const a=document.createElement('a');a.download='tree.png';a.href=c.toDataURL();a.click()}); };
 
 function domToText(d,p,l,s){
   if(!d)return""; const name=d.querySelector('.t-name').textContent, comm=d.querySelector('.t-comment').textContent;
@@ -395,6 +412,7 @@ function domToText(d,p,l,s){
   if(ch&&!d.classList.contains('collapsed')) Array.from(ch.children).forEach((x,i,arr)=>line+=domToText(x,(p===""&&l)?"":p+(l?c.s:c.v),i===arr.length-1,s));
   return line;
 }
+function createJSON(d){ /* Simplified Placeholder for JSON export logic */ return {}; } 
 </script>
 </body>
 </html>
