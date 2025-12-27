@@ -3,466 +3,633 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ProjectTree Generator</title>
+<title>ProjectTree Ultimate</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 <style>
   :root {
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
-    --bg: #f8fafc;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --bg: #f1f5f9;
     --surface: #ffffff;
     --border: #e2e8f0;
     --text: #334155;
-    --text-muted: #64748b;
-    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    
-    /* Syntax Colors */
-    --c-js: #d97706; --c-py: #0284c7; --c-md: #7c3aed;
-    --c-img: #059669; --c-json: #dc2626; --c-bin: #94a3b8;
+    --text-muted: #94a3b8;
+    --code-bg: #1e293b;
+    --code-text: #e2e8f0;
+    --line-color: #475569;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
   
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     background-color: var(--bg);
     color: var(--text);
     padding: 2rem 1rem;
     line-height: 1.5;
   }
 
-  .container {
-    max-width: 900px;
-    margin: 0 auto;
-  }
+  .container { max-width: 1100px; margin: 0 auto; }
 
-  /* Header */
-  header {
-    margin-bottom: 2rem;
-    text-align: center;
-  }
-  h1 { font-size: 1.875rem; font-weight: 800; color: #0f172a; letter-spacing: -0.025em; }
-  .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-top: 0.5rem; }
+  /* --- HEADER --- */
+  header { margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand h1 { font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+  .brand-icon { width: 32px; height: 32px; color: var(--primary); }
 
-  /* Main Card */
+  /* --- CONTROLS --- */
   .card {
     background: var(--surface);
     border-radius: 12px;
-    box-shadow: var(--shadow);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     border: 1px solid var(--border);
     overflow: hidden;
+    margin-bottom: 1.5rem;
   }
 
-  /* Toolbar Area */
   .toolbar {
-    padding: 1.5rem;
+    padding: 1.25rem;
     border-bottom: 1px solid var(--border);
     background: #f8fafc;
-  }
-
-  .control-group {
     display: flex;
-    gap: 10px;
     flex-wrap: wrap;
-    margin-bottom: 1rem;
+    gap: 1rem;
+    align-items: center;
   }
-  
-  .control-group:last-child { margin-bottom: 0; }
 
-  /* Inputs */
-  input[type="text"] {
-    flex: 1;
-    min-width: 200px;
-    padding: 0.6rem 0.8rem;
+  .group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .divider { width: 1px; height: 24px; background: var(--border); margin: 0 8px; }
+
+  input[type="text"], select {
+    padding: 0.5rem 0.75rem;
     border: 1px solid #cbd5e1;
     border-radius: 6px;
-    font-size: 0.9rem;
-    transition: all 0.2s;
-  }
-  input[type="text"]:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-  }
-
-  /* Buttons */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0.6rem 1rem;
-    border-radius: 6px;
-    font-weight: 600;
     font-size: 0.875rem;
-    cursor: pointer;
-    border: 1px solid transparent;
+    color: var(--text);
+    background: white;
+  }
+  input[type="text"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 0.5rem 0.85rem; border-radius: 6px;
+    font-weight: 500; font-size: 0.875rem; cursor: pointer;
+    border: 1px solid var(--border); background: white; color: var(--text);
     transition: all 0.2s;
   }
-  
-  .btn-primary { background: var(--primary); color: white; }
+  .btn:hover { background: #f1f5f9; border-color: #94a3b8; }
+  .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
   .btn-primary:hover { background: var(--primary-hover); }
-  
-  .btn-outline { background: white; border-color: #cbd5e1; color: var(--text); }
-  .btn-outline:hover { background: #f1f5f9; border-color: #94a3b8; }
-  
-  /* Hidden File Input */
-  #pick { display: none; }
+  .btn svg { width: 16px; height: 16px; }
 
-  /* Drop Zone */
+  /* --- DROP ZONE --- */
   .drop-zone {
     border: 2px dashed #cbd5e1;
     border-radius: 8px;
-    padding: 2rem;
+    padding: 2.5rem;
     text-align: center;
     background: white;
-    margin: 0 1.5rem 1.5rem 1.5rem; /* Margin inside card below toolbar */
+    margin: 1.25rem;
     transition: all 0.2s;
     cursor: pointer;
     color: var(--text-muted);
   }
-  
-  .drop-zone:hover, .drop-zone.drag {
-    border-color: var(--primary);
-    background: #eff6ff;
-    color: var(--primary);
-  }
-  
-  .drop-zone svg { width: 48px; height: 48px; margin-bottom: 10px; opacity: 0.5; }
+  .drop-zone:hover, .drop-zone.drag { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
+  .drop-zone-icon { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.5; }
 
-  /* Output Area */
-  .output-wrapper {
-    position: relative;
-    background: #1e293b; /* Dark theme for code */
-    color: #e2e8f0;
-    padding: 0;
-    margin: 0;
-  }
-
-  .stats-bar {
-    background: #0f172a;
-    padding: 0.5rem 1rem;
-    font-size: 0.75rem;
-    color: #94a3b8;
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 1px solid #334155;
-  }
-
-  pre {
+  /* --- TREE VIEW (DOM) --- */
+  .tree-container {
+    background: var(--code-bg);
+    color: var(--code-text);
     padding: 1.5rem;
+    font-family: "Fira Code", Consolas, monospace;
+    font-size: 14px;
     overflow-x: auto;
-    font-family: "Fira Code", Consolas, Monaco, monospace;
-    font-size: 0.9rem;
-    line-height: 1.6;
-    min-height: 200px;
-    max-height: 600px; /* Scroll if too long */
-    overflow-y: auto;
+    min-height: 300px;
+    position: relative;
   }
 
-  /* Empty State Placeholder in pre */
-  pre:empty::before {
-    content: "Output structure will appear here...";
-    color: #475569;
-    font-style: italic;
+  /* Tree Nodes */
+  .t-node { display: block; }
+  .t-head {
+    display: flex; align-items: center;
+    padding: 2px 0;
+    cursor: pointer;
+    user-select: none;
   }
-
-  /* Syntax Highlighting */
-  .tree-line { color: #64748b; } /* │ ├── └── characters */
-  .hl-js { color: #fbbf24; }
-  .hl-ts { color: #60a5fa; }
-  .hl-css { color: #38bdf8; }
-  .hl-html { color: #f87171; }
-  .hl-py { color: #818cf8; }
-  .hl-json { color: #a3e635; }
-  .hl-md { color: #c084fc; }
-  .hl-img { color: #2dd4bf; }
+  .t-head:hover { background: rgba(255,255,255,0.05); }
   
-  /* Toast Notification */
-  .toast {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    background: #10b981;
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.3s;
-    font-weight: 600;
-    pointer-events: none;
-  }
-  .toast.show { opacity: 1; transform: translateY(0); }
+  /* Indentation lines */
+  .indent { display: inline-block; width: 24px; height: 100%; border-right: 1px solid transparent; flex-shrink: 0; }
+  .indent.line { border-right-color: var(--line-color); }
 
+  /* Icons */
+  .t-icon { width: 18px; height: 18px; margin-right: 8px; flex-shrink: 0; }
+  .t-arrow { width: 14px; height: 14px; margin-right: 4px; transition: transform 0.2s; color: var(--text-muted); }
+  .t-node.collapsed .t-arrow { transform: rotate(-90deg); }
+  .t-arrow.hidden { visibility: hidden; }
+
+  /* Content */
+  .t-name { margin-right: 12px; }
+  .t-meta { font-size: 12px; color: #64748b; margin-right: 12px; }
+  
+  /* Annotations (Editable) */
+  .t-comment {
+    color: #059669; font-style: italic; opacity: 0.7;
+    border-bottom: 1px dashed transparent; min-width: 20px;
+  }
+  .t-comment:hover, .t-comment:focus { opacity: 1; border-bottom-color: #059669; }
+  .t-comment:empty::before { content: "# click to add comment"; color: #475569; }
+  .t-comment:focus::before { content: ""; }
+
+  /* Colors */
+  .c-folder { color: #fcd34d; }
+  .c-js { color: #f59e0b; } .c-ts { color: #3b82f6; }
+  .c-html { color: #ef4444; } .c-css { color: #06b6d4; }
+  .c-json { color: #84cc16; } .c-md { color: #a855f7; }
+  .c-img { color: #10b981; } .c-def { color: #94a3b8; }
+
+  /* Collapsing logic */
+  .t-children { margin-left: 0; }
+  .t-node.collapsed .t-children { display: none; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem;
+    background: #10b981; color: white;
+    padding: 0.75rem 1.5rem; border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    transform: translateY(100px); opacity: 0; transition: all 0.3s;
+    font-weight: 600; display: flex; align-items: center; gap: 8px; z-index: 99;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* Hidden Input */
+  #pick { display: none; }
 </style>
 </head>
 <body>
 
 <div class="container">
   <header>
-    <h1>📁 ProjectTree</h1>
-    <div class="subtitle">Generate clean directory structures for documentation</div>
+    <div class="brand">
+      <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+      <h1>ProjectTree <span style="font-weight:300; font-size:1rem; color:var(--text-muted)">Ultimate</span></h1>
+    </div>
+    <div class="group">
+      <button class="btn" onclick="window.open('https://github.com', '_blank')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Help
+      </button>
+    </div>
   </header>
 
   <div class="card">
     <div class="toolbar">
-      <div class="control-group">
+      <div class="group">
         <label for="pick" class="btn btn-primary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Select Folder
         </label>
-        <button id="btnCopy" class="btn btn-outline">Copy Tree</button>
-        <button id="btnTxt" class="btn btn-outline">Save .TXT</button>
-        <button id="btnMd" class="btn btn-outline">Save .MD</button>
+        <div class="divider"></div>
+        <select id="selStyle" class="btn">
+          <option value="unicode">Style: Unicode (├──)</option>
+          <option value="ascii">Style: ASCII (|--)</option>
+        </select>
+        <button id="btnCopy" class="btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy Text
+        </button>
       </div>
 
-      <div class="control-group">
-        <input id="inpIgnore" type="text" placeholder="Ignored patterns (e.g. node_modules, .git)" />
-        <input id="inpExt" type="text" placeholder="Filter Extensions (e.g. .js, .py)" style="max-width: 150px;" />
+      <div class="group" style="margin-left:auto">
+        <button id="btnJson" class="btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          JSON
+        </button>
+        <button id="btnImg" class="btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          PNG Image
+        </button>
+      </div>
+      
+      <div style="width:100%; height:10px"></div> <div class="group" style="width:100%">
+        <input id="inpIgnore" type="text" placeholder="Ignore (e.g. node_modules, .git)" style="flex:2" />
+        <input id="inpExt" type="text" placeholder="Filter Ext (e.g. .js, .py)" style="flex:1" />
       </div>
     </div>
 
     <div id="dropZone" class="drop-zone">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+      <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
       <div>Drag & Drop folder here to visualize</div>
+      <div style="font-size:0.8rem; margin-top:0.5rem">Supports large projects automatically</div>
     </div>
 
-    <div class="output-wrapper">
-      <div class="stats-bar" id="statsBar">Ready to process</div>
-      <pre id="output"></pre>
+    <div id="treeContainer" class="tree-container">
+      <div style="color:var(--text-muted); text-align:center; padding-top:2rem">
+        Structure will appear here...
+      </div>
     </div>
   </div>
 </div>
 
 <input type="file" id="pick" webkitdirectory multiple />
-<div id="toast" class="toast">Successfully Copied!</div>
+
+<div id="toast" class="toast">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toastMsg">Action Successful</span>
+</div>
 
 <script>
-/* ================== CONFIG ================== */
-const DEFAULT_IGNORE = new Set([
-  "node_modules",".git",".github",".gitlab",".vscode",".idea",
-  "dist","build","out","coverage","bin","obj",
-  "__pycache__",".venv","venv","env",".cache",
-  ".next",".nuxt",".vite",".DS_Store","Thumbs.db"
-]);
+/* ================== ICONS (SVG STRINGS) ================== */
+const ICONS = {
+  arrow: `<svg class="t-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>`,
+  folder: `<svg class="t-icon c-folder" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`,
+  file: `<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`
+};
 
-/* ================== DOM ELEMENTS ================== */
+/* ================== CONFIG ================== */
+const DEFAULT_IGNORE = new Set(["node_modules",".git",".vscode",".idea","dist","build","__pycache__",".DS_Store"]);
+
+/* ================== STATE ================== */
+let fileStructure = {}; // Root object storing the whole tree data
+let rootDirName = "root";
+
+/* ================== ELEMENTS ================== */
 const els = {
   pick: document.getElementById('pick'),
   drop: document.getElementById('dropZone'),
-  out: document.getElementById('output'),
-  stats: document.getElementById('statsBar'),
+  tree: document.getElementById('treeContainer'),
   ignore: document.getElementById('inpIgnore'),
   ext: document.getElementById('inpExt'),
-  btnCopy: document.getElementById('btnCopy'),
-  btnTxt: document.getElementById('btnTxt'),
-  btnMd: document.getElementById('btnMd'),
-  toast: document.getElementById('toast')
+  toast: document.getElementById('toast'),
+  selStyle: document.getElementById('selStyle')
 };
 
-/* ================== STATE ================== */
-let rawTreeText = "";
-
-/* ================== INIT ================== */
-// Load preferences
+// Load Prefs
 els.ignore.value = localStorage.getItem('pt_ignore') || "";
 els.ext.value = localStorage.getItem('pt_ext') || "";
 
-// Save preferences
-const savePrefs = () => {
-  localStorage.setItem('pt_ignore', els.ignore.value);
-  localStorage.setItem('pt_ext', els.ext.value);
-};
-els.ignore.addEventListener('input', savePrefs);
-els.ext.addEventListener('input', savePrefs);
+/* ================== MAIN LOGIC ================== */
 
-/* ================== EVENT LISTENERS ================== */
-// Click dropzone triggers file input
-els.drop.addEventListener('click', () => els.pick.click());
-
-// Drag & Drop visual feedback
-['dragenter', 'dragover'].forEach(ev => {
-  els.drop.addEventListener(ev, e => {
-    e.preventDefault();
-    els.drop.classList.add('drag');
-  });
-});
-['dragleave', 'drop'].forEach(ev => {
-  els.drop.addEventListener(ev, e => {
-    e.preventDefault();
-    els.drop.classList.remove('drag');
-  });
-});
-
-// Process files
-els.drop.addEventListener('drop', e => {
-  const dt = e.dataTransfer;
-  if(dt && dt.files && dt.files.length) processFiles(Array.from(dt.files));
-});
-els.pick.addEventListener('change', () => processFiles(Array.from(els.pick.files)));
-
-// Actions
-els.btnCopy.onclick = () => {
-  if(!rawTreeText) return;
-  navigator.clipboard.writeText(rawTreeText);
-  showToast();
-};
-els.btnTxt.onclick = () => download(rawTreeText, "project_tree.txt", "text/plain");
-els.btnMd.onclick = () => download("```text\n" + rawTreeText + "\n```", "project_tree.md", "text/markdown");
-
-/* ================== LOGIC ================== */
+// 1. Process Files
 async function processFiles(files) {
   if (!files.length) return;
   
-  els.stats.textContent = "Processing...";
+  els.tree.innerHTML = '<div style="text-align:center">Processing...</div>';
   
-  // 1. Prepare Filters
-  const manualIgnore = els.ignore.value.split(',').map(s => s.trim()).filter(Boolean);
+  // Prepare filters
+  const manualIgnore = els.ignore.value.split(',').map(s=>s.trim()).filter(Boolean);
   const ignoreSet = new Set([...DEFAULT_IGNORE, ...manualIgnore]);
-  const allowedExts = els.ext.value.split(',').map(s => s.trim()).filter(Boolean);
-  
-  // 2. Parse .gitignore if exists
+  const allowedExts = els.ext.value.split(',').map(s=>s.trim()).filter(Boolean);
+
+  // Check .gitignore
   const gitignore = files.find(f => f.name === ".gitignore");
-  if (gitignore) {
+  if(gitignore) {
     try {
       const txt = await gitignore.text();
-      txt.split(/\r?\n/).forEach(line => {
-        line = line.trim();
-        if (line && !line.startsWith('#')) ignoreSet.add(line.replace(/\/$/, ''));
+      txt.split(/\r?\n/).forEach(l => {
+        l = l.trim(); 
+        if(l && !l.startsWith('#')) ignoreSet.add(l.replace(/\/$/,''));
       });
-    } catch(e) { console.warn("Failed to read .gitignore"); }
+    } catch(e){}
   }
 
-  // 3. Build Tree Structure
-  const tree = {};
-  let stats = { files: 0, folders: 0, ignored: 0 };
-
+  // Build Data Structure
+  const root = { name: "root", type: "folder", children: {}, size: 0, count: 0 };
+  
+  // First pass: Construct Object
   for (const f of files) {
-    const parts = f.webkitRelativePath.split('/');
+    const path = f.webkitRelativePath;
+    const parts = path.split('/');
     
-    // Check Ignore (any parent folder match)
-    if (parts.some(p => ignoreSet.has(p))) {
-      stats.ignored++;
-      continue;
-    }
+    // Ignore Check
+    if (parts.some(p => ignoreSet.has(p))) continue;
+    // Extension Check
+    if (allowedExts.length && !allowedExts.some(e => f.name.endsWith(e))) continue;
 
-    // Check Extension
-    if (allowedExts.length > 0 && !allowedExts.some(e => f.name.endsWith(e))) {
-      continue; 
-    }
+    // Determine Root Name (first part of first file usually)
+    if (rootDirName === "root" && parts.length > 0) rootDirName = parts[0];
 
-    // Build Object
-    let currentLevel = tree;
+    let curr = root;
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
-      if (!currentLevel[part]) {
-        // If last part, it's a file (null), else folder (object)
-        currentLevel[part] = (i === parts.length - 1) ? null : {};
-        if (currentLevel[part] === null) stats.files++;
-        else stats.folders++;
+      const isFile = (i === parts.length - 1);
+      
+      if (!curr.children[part]) {
+        curr.children[part] = {
+          name: part,
+          type: isFile ? "file" : "folder",
+          children: {},
+          size: isFile ? f.size : 0,
+          count: 0
+        };
       }
-      currentLevel = currentLevel[part];
+      curr = curr.children[part];
     }
   }
 
-  // 4. Sort Tree (Folders first, then files, alphabetical)
-  const sortTree = (node) => {
-    if (node === null) return null; // File
-    const sorted = {};
-    const entries = Object.entries(node).sort((a, b) => {
-      const aIsFolder = a[1] !== null;
-      const bIsFolder = b[1] !== null;
-      if (aIsFolder && !bIsFolder) return -1;
-      if (!aIsFolder && bIsFolder) return 1;
-      return a[0].localeCompare(b[0]);
-    });
-    
-    for (const [key, val] of entries) {
-      sorted[key] = sortTree(val);
-    }
-    return sorted;
-  };
-
-  const finalTree = sortTree(tree);
-
-  // 5. Render
-  rawTreeText = ""; // Reset global variable
-  const html = generateOutput(finalTree); // recursive build
+  // Second pass: Calculate Directory Sizes recursively
+  calcStats(root);
   
-  els.out.innerHTML = html;
-  els.stats.textContent = `📊 ${stats.files} files • ${stats.folders} folders • ${stats.ignored} ignored`;
+  // Sort children
+  sortChildren(root);
+
+  // Assign to global & Render
+  fileStructure = root.children[Object.keys(root.children)[0]]; // Un-nest the wrapper
+  renderTree(fileStructure);
+  
+  els.drop.style.display = 'none'; // Hide dropzone after load
 }
 
-// Recursive HTML & Text generator
-function generateOutput(node, prefix = "", isRoot = true) {
-  let htmlBuffer = "";
-  const keys = Object.keys(node);
-  
-  keys.forEach((key, index) => {
-    const isLast = index === keys.length - 1;
-    const value = node[key];
-    const isFile = value === null;
-    
-    // Text String Construction (for Copy)
-    if (isRoot) {
-      rawTreeText += `${key}\n`;
-    } else {
-      rawTreeText += `${prefix}${isLast ? "└── " : "├── "}${key}\n`;
-    }
+// Helper: Calculate Stats
+function calcStats(node) {
+  if (node.type === "file") return;
+  let sumSize = 0;
+  let sumCount = 0;
+  for (const key in node.children) {
+    const child = node.children[key];
+    calcStats(child);
+    sumSize += child.size;
+    sumCount += (child.type === 'file' ? 1 : child.count); // Count items
+  }
+  node.size = sumSize;
+  node.count = Object.keys(node.children).length;
+}
 
-    // HTML Construction (for Display)
-    let lineHtml = "";
-    if (isRoot) {
-      lineHtml = `<span class="tree-root">${key}</span>\n`;
-    } else {
-      const connector = isLast ? "└── " : "├── ";
-      lineHtml = `<span class="tree-line">${prefix}${connector}</span>${colorizeFilename(key)}\n`;
-    }
-    htmlBuffer += lineHtml;
-
-    // Recursion
-    if (!isFile) {
-      const nextPrefix = isRoot ? "" : (prefix + (isLast ? "    " : "│   "));
-      htmlBuffer += generateOutput(value, nextPrefix, false);
-    }
+// Helper: Sort
+function sortChildren(node) {
+  if (node.type === 'file') return;
+  const sortedKeys = Object.keys(node.children).sort((a,b) => {
+    const nA = node.children[a], nB = node.children[b];
+    if (nA.type !== nB.type) return nA.type === 'folder' ? -1 : 1; // Folder first
+    return a.localeCompare(b);
   });
   
-  return htmlBuffer;
+  const newChildren = {};
+  sortedKeys.forEach(k => {
+    newChildren[k] = node.children[k];
+    sortChildren(newChildren[k]);
+  });
+  node.children = newChildren;
 }
 
-// Helper: Syntax Highlighting based on extension
-function colorizeFilename(name) {
-  const ext = name.split('.').pop();
-  let cls = "";
-  
-  if (/^(js|jsx|mjs)$/.test(ext)) cls = "hl-js";
-  else if (/^(ts|tsx)$/.test(ext)) cls = "hl-ts";
-  else if (/^(css|scss|sass|less)$/.test(ext)) cls = "hl-css";
-  else if (/^(html|htm|xml|svg)$/.test(ext)) cls = "hl-html";
-  else if (/^(py|rb|php)$/.test(ext)) cls = "hl-py";
-  else if (/^(json|yml|yaml)$/.test(ext)) cls = "hl-json";
-  else if (/^(md|txt)$/.test(ext)) cls = "hl-md";
-  else if (/^(png|jpg|jpeg|gif|webp|ico)$/.test(ext)) cls = "hl-img";
-  
-  return cls ? `<span class="${cls}">${name}</span>` : name;
+// 2. Render DOM Tree
+function renderTree(data) {
+  els.tree.innerHTML = '';
+  // Recursively build DOM
+  els.tree.appendChild(createNodeDOM(data, []));
 }
 
-// Helper: Download
-function download(content, filename, type) {
-  if(!content) return;
+function createNodeDOM(node, indentLines) {
+  const isFolder = node.type === 'folder';
+  
+  // Container
+  const div = document.createElement('div');
+  div.className = 't-node';
+  
+  // 1. Header Row
+  const head = document.createElement('div');
+  head.className = 't-head';
+  
+  // Indentation
+  indentLines.forEach(isLast => {
+    const span = document.createElement('span');
+    span.className = 'indent' + (isLast ? '' : ' line'); // Just space if last
+    head.appendChild(span);
+  });
+
+  // Arrow & Icon
+  const arrowWrapper = document.createElement('span');
+  if (isFolder) {
+    arrowWrapper.innerHTML = ICONS.arrow;
+    head.onclick = (e) => {
+      // Prevent toggling when clicking comment
+      if(e.target.isContentEditable) return; 
+      div.classList.toggle('collapsed');
+    };
+  } else {
+    arrowWrapper.innerHTML = `<div class="t-arrow hidden"></div>`; // spacer
+  }
+  head.appendChild(arrowWrapper);
+
+  // File/Folder Icon
+  const iconSpan = document.createElement('span');
+  iconSpan.innerHTML = isFolder ? ICONS.folder : ICONS.file;
+  // Colorize file icon
+  if (!isFolder) {
+    const ext = node.name.split('.').pop();
+    const map = {js:'c-js',ts:'c-ts',html:'c-html',css:'c-css',json:'c-json',md:'c-md',png:'c-img',jpg:'c-img',jpeg:'c-img'};
+    if(map[ext]) iconSpan.firstElementChild.classList.add(map[ext]);
+    else iconSpan.firstElementChild.classList.add('c-def');
+  }
+  head.appendChild(iconSpan);
+
+  // Name
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 't-name';
+  nameSpan.textContent = node.name;
+  head.appendChild(nameSpan);
+
+  // Meta (Size/Count)
+  const metaSpan = document.createElement('span');
+  metaSpan.className = 't-meta';
+  metaSpan.textContent = isFolder 
+    ? `(${node.count} items)` 
+    : formatBytes(node.size);
+  head.appendChild(metaSpan);
+
+  // Comment (Editable)
+  const commentSpan = document.createElement('span');
+  commentSpan.className = 't-comment';
+  commentSpan.contentEditable = true;
+  commentSpan.spellcheck = false;
+  // Stop propagation to prevent folding when clicking comment
+  commentSpan.onclick = e => e.stopPropagation();
+  head.appendChild(commentSpan);
+
+  div.appendChild(head);
+
+  // 2. Children Container
+  if (isFolder) {
+    const childrenContainer = document.createElement('div');
+    childrenContainer.className = 't-children';
+    
+    const childKeys = Object.keys(node.children);
+    childKeys.forEach((key, index) => {
+      const isLastChild = index === childKeys.length - 1;
+      const childNode = node.children[key];
+      // Pass down indent lines state. 
+      // If current node is last in its parent, we pass 'true' (empty space), else 'false' (vertical line)
+      const nextIndent = [...indentLines, indentLines.length > 0 ? (indentLines[indentLines.length-1] === true) : false]; 
+      
+      // Wait, simple CSS border-left logic is better for visual tree than calculating lines manually
+      // Let's rely on CSS padding hierarchy for Visual, but we need structure.
+      // Re-doing simple DOM append:
+      childrenContainer.appendChild(createNodeDOM(childNode, [])); // Pass empty, we use CSS padding
+    });
+    
+    // CSS-based indentation is safer for interactive DOM
+    childrenContainer.style.paddingLeft = '22px';
+    childrenContainer.style.borderLeft = '1px solid var(--line-color)';
+    childrenContainer.style.marginLeft = '9px'; // Align with arrow center
+    
+    div.appendChild(childrenContainer);
+  }
+
+  return div;
+}
+
+/* ================== EXPORT FUNCTIONS ================== */
+
+// Generate Text String (Recursive)
+function generateTextTree(node, prefix = "", isLast = true, style = "unicode") {
+  let str = "";
+  const isRoot = prefix === "";
+  
+  // Connector Chars
+  const CHARS = style === "unicode" 
+    ? { branch: "├── ", last: "└── ", vert: "│   ", space: "    " }
+    : { branch: "|-- ", last: "`-- ", vert: "|   ", space: "    " };
+
+  // Determine user comment from DOM
+  // Note: We traverse the DOM to get comments, matching by structure is hard.
+  // Simplification: We regenerate text without comments OR we assume data sync.
+  // For this 'Ultimate' version, let's just dump structure first.
+  
+  // NOTE: Ideally we should read the comment from the DOM.
+  // Since we don't have IDs, let's assume the order matches. 
+  // For now, simpler to just export structure + name.
+  
+  if (!isRoot) {
+    str += prefix + (isLast ? CHARS.last : CHARS.branch) + node.name;
+  } else {
+    str += node.name;
+  }
+  
+  // Add comment if we can find it? (Skipped for simplicity in this text export, focusing on structure)
+  str += "\n";
+
+  if (node.type === 'folder') {
+    const keys = Object.keys(node.children);
+    keys.forEach((k, i) => {
+      const last = i === keys.length - 1;
+      const childPrefix = isRoot ? "" : prefix + (isLast ? CHARS.space : CHARS.vert);
+      str += generateTextTree(node.children[k], childPrefix, last, style);
+    });
+  }
+  return str;
+}
+
+// Button Handlers
+document.getElementById('btnCopy').onclick = () => {
+  if(!fileStructure.name) return;
+  const style = els.selStyle.value;
+  
+  // Get comments from DOM by traversing visually
+  // This is a "What You See Is What You Get" parser
+  const text = domToText(els.tree.firstElementChild, "", true, style);
+  
+  navigator.clipboard.writeText(text);
+  showToast("Tree copied to clipboard!");
+};
+
+document.getElementById('btnJson').onclick = () => {
+  if(!fileStructure.name) return;
+  // Deep clone to remove UI specific circular refs if any
+  const clean = JSON.stringify(fileStructure, null, 2);
+  download(clean, "structure.json", "application/json");
+};
+
+document.getElementById('btnImg').onclick = () => {
+  if(!fileStructure.name) return;
+  
+  showToast("Generating Image...");
+  
+  // Use html2canvas
+  html2canvas(els.tree, {
+    backgroundColor: "#1e293b",
+    scale: 2 // High res
+  }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = 'project-structure.png';
+    link.href = canvas.toDataURL();
+    link.click();
+  });
+};
+
+// DOM Traversal for Text Export (supports Comments)
+function domToText(domNode, prefix, isLast, style) {
+  if(!domNode) return "";
+  
+  const head = domNode.querySelector('.t-head');
+  const name = head.querySelector('.t-name').textContent;
+  const comment = head.querySelector('.t-comment').textContent;
+  
+  // Chars
+  const CHARS = style === "unicode" 
+    ? { branch: "├── ", last: "└── ", vert: "│   ", space: "    " }
+    : { branch: "|-- ", last: "`-- ", vert: "|   ", space: "    " };
+
+  let line = "";
+  if (prefix === "" && isLast === true) { // Root
+    line = name;
+  } else {
+    line = prefix + (isLast ? CHARS.last : CHARS.branch) + name;
+  }
+  
+  if(comment) line += "  # " + comment;
+  line += "\n";
+
+  const childrenContainer = domNode.querySelector('.t-children');
+  if(childrenContainer && !domNode.classList.contains('collapsed')) {
+    const children = Array.from(childrenContainer.children); // .t-node elements
+    children.forEach((child, i) => {
+      const last = i === children.length - 1;
+      const childPrefix = (prefix === "" && isLast === true) ? "" : prefix + (isLast ? CHARS.space : CHARS.vert);
+      line += domToText(child, childPrefix, last, style);
+    });
+  }
+  return line;
+}
+
+/* ================== UTILS ================== */
+function formatBytes(bytes) {
+  if(bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+function download(content, name, type) {
   const blob = new Blob([content], {type});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = filename; a.click();
+  a.href = url; a.download = name; a.click();
   URL.revokeObjectURL(url);
 }
 
-// Helper: Toast
-function showToast() {
+function showToast(msg) {
+  document.getElementById('toastMsg').textContent = msg;
   els.toast.classList.add('show');
-  setTimeout(() => els.toast.classList.remove('show'), 2000);
+  setTimeout(()=>els.toast.classList.remove('show'), 2000);
 }
-</script>
 
+// Events
+els.drop.onclick = () => els.pick.click();
+els.pick.onchange = () => processFiles(Array.from(els.pick.files));
+['dragenter','dragover'].forEach(e => els.drop.addEventListener(e, ev => {ev.preventDefault(); els.drop.classList.add('drag')}));
+['dragleave','drop'].forEach(e => els.drop.addEventListener(e, ev => {ev.preventDefault(); els.drop.classList.remove('drag')}));
+els.drop.addEventListener('drop', ev => {
+  const dt = ev.dataTransfer;
+  if(dt.files.length) processFiles(Array.from(dt.files));
+});
+els.ignore.oninput = () => localStorage.setItem('pt_ignore', els.ignore.value);
+els.ext.oninput = () => localStorage.setItem('pt_ext', els.ext.value);
+
+</script>
 </body>
 </html>
