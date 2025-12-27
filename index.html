@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ProjectTree Ultimate v3 (Dynamic Filter)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>ProjectTree Responsive</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
@@ -14,11 +14,11 @@
     --code-bg: #1e293b; --code-text: #e2e8f0; --line-color: #475569;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+  * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
   body {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background-color: var(--bg); color: var(--text);
-    padding: 2rem 1rem; line-height: 1.5; min-height: 100vh;
+    padding: 1.5rem 1rem; line-height: 1.5; min-height: 100vh;
     transition: background 0.2s;
   }
   body.drag-active { background-color: #eff6ff; }
@@ -26,116 +26,132 @@
   .container { max-width: 1100px; margin: 0 auto; position: relative; }
 
   /* HEADER */
-  header { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
-  .brand { display: flex; align-items: center; gap: 12px; }
-  .brand h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; }
+  header { margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand h1 { font-size: 1.25rem; font-weight: 800; color: #0f172a; }
 
   /* CARD & TOOLBAR */
   .card {
     background: var(--surface); border-radius: 12px;
     box-shadow: 0 4px 6px -1px rgb(0 0 0/0.1); border: 1px solid var(--border);
-    overflow: visible; /* Changed to visible for popup */
+    overflow: visible; 
     margin-bottom: 1.5rem; position: relative; min-height: 300px;
   }
 
   .toolbar {
-    padding: 1.25rem; border-bottom: 1px solid var(--border); background: #f8fafc;
-    display: flex; flex-wrap: wrap; gap: 10px; align-items: center; position: relative;
+    padding: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center; position: relative;
     z-index: 20;
   }
   
   .group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
 
   /* BUTTONS & INPUTS */
   .btn {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 0.5rem 0.85rem; border-radius: 6px;
-    font-weight: 500; font-size: 0.875rem; cursor: pointer;
+    padding: 0.5rem 0.75rem; border-radius: 6px;
+    font-weight: 500; font-size: 0.85rem; cursor: pointer;
     border: 1px solid var(--border); background: white; color: var(--text);
     transition: all 0.2s; user-select: none;
   }
   .btn:hover { background: #f1f5f9; border-color: #94a3b8; }
   .btn.active { background: #e0f2fe; border-color: var(--primary); color: var(--primary); }
-  .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
-  .btn-primary:hover { background: var(--primary-hover); }
-
+  
   input[type="text"], select {
-    padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1;
-    border-radius: 6px; font-size: 0.875rem; color: var(--text);
+    padding: 0.5rem 0.6rem; border: 1px solid #cbd5e1;
+    border-radius: 6px; font-size: 0.85rem; color: var(--text);
   }
 
-  /* --- FILTER PANEL (NEW) --- */
+  /* --- RESPONSIVE FILTER PANEL --- */
   .filter-panel {
     position: absolute; top: 100%; left: 0; margin-top: 8px;
     background: white; border: 1px solid var(--border);
-    border-radius: 8px; box-shadow: 0 10px 15px -3px rgb(0 0 0/0.1);
-    width: 400px; max-width: 90vw; padding: 1.25rem;
-    z-index: 50; display: none;
+    border-radius: 12px; box-shadow: 0 10px 25px -5px rgb(0 0 0/0.15);
+    width: 320px; padding: 1.25rem;
+    z-index: 999; display: none;
   }
-  .filter-panel.show { display: block; }
+  
+  /* MEDIA QUERY KHUSUS MOBILE */
+  @media (max-width: 640px) {
+    .filter-panel {
+      position: fixed; /* Fix ke layar, bukan ke tombol */
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%); /* Tengahkan persis */
+      width: 90%; /* Lebar responsif */
+      max-width: 360px;
+      margin-top: 0;
+      /* Tambahkan efek shadow gelap di belakang popup */
+      box-shadow: 0 0 0 100vmax rgba(0,0,0,0.6), 0 20px 25px -5px rgb(0 0 0/0.2); 
+    }
+  }
+
+  .filter-panel.show { display: block; animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes popIn { from { opacity: 0; transform: translate(-50%, -45%) scale(0.95); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+  /* Reset animation for desktop */
+  @media (min-width: 641px) {
+    @keyframes popIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+  }
   
   .fp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
   .fp-title { font-weight: 700; font-size: 0.95rem; }
   
-  /* Toggle Switch */
-  .toggle { position: relative; display: inline-block; width: 40px; height: 22px; }
+  .toggle { position: relative; display: inline-block; width: 36px; height: 20px; }
   .toggle input { opacity: 0; width: 0; height: 0; }
   .slider { position: absolute; cursor: pointer; inset: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-  .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+  .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
   input:checked + .slider { background-color: var(--primary); }
-  input:checked + .slider:before { transform: translateX(18px); }
+  input:checked + .slider:before { transform: translateX(16px); }
 
-  /* Checkbox Grid */
-  .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 300px; overflow-y: auto; margin-bottom: 1rem; }
+  .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-height: 250px; overflow-y: auto; margin-bottom: 1rem; }
   .chk-label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; color: var(--text); }
   .chk-label:hover { color: var(--primary); }
-  .chk-label input { accent-color: var(--primary); }
+  .chk-label input { accent-color: var(--primary); width: 16px; height: 16px; }
 
-  /* --- DROP ZONE --- */
+  /* DROP ZONE */
   .drop-zone {
-    border: 2px dashed #cbd5e1; border-radius: 8px; padding: 3rem;
-    text-align: center; background: white; margin: 1.5rem;
+    border: 2px dashed #cbd5e1; border-radius: 8px; padding: 2.5rem 1rem;
+    text-align: center; background: white; margin: 1rem;
     transition: all 0.2s; cursor: pointer; color: var(--text-muted);
   }
-  .drop-zone-icon { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.5; }
+  .drop-zone:hover { border-color: var(--primary); background: #f0f9ff; color: var(--primary); }
+  .drop-zone-icon { width: 40px; height: 40px; margin-bottom: 10px; opacity: 0.5; }
 
-  /* --- TREE CONTAINER --- */
+  /* TREE CONTAINER */
   .tree-container {
     background: var(--code-bg); color: var(--code-text);
-    padding: 1.5rem; font-family: "Fira Code", monospace; font-size: 13.5px;
+    padding: 1rem; font-family: "Fira Code", monospace; font-size: 13px;
     overflow-x: auto; min-height: 400px; display: none;
+    -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
   }
   .tree-container.show { display: block; }
   
-  /* Tree Nodes */
-  .t-node { display: block; }
-  .t-head { display: flex; align-items: center; padding: 2px 0; cursor: pointer; user-select: none; }
+  /* Tree Styles */
+  .t-node { display: block; white-space: nowrap; }
+  .t-head { display: flex; align-items: center; padding: 3px 0; cursor: pointer; user-select: none; }
   .t-head:hover { background: rgba(255,255,255,0.05); }
-  .indent { display: inline-block; width: 22px; height: 100%; border-right: 1px solid transparent; flex-shrink: 0; }
-  .t-children { padding-left: 20px; border-left: 1px solid var(--line-color); margin-left: 8px; }
+  .indent { display: inline-block; width: 20px; height: 100%; border-right: 1px solid transparent; flex-shrink: 0; }
+  .t-children { padding-left: 19px; border-left: 1px solid var(--line-color); margin-left: 7px; }
   .t-node.collapsed .t-children { display: none; }
   
-  /* Icons & Colors */
   .t-icon { width: 16px; height: 16px; margin-right: 8px; flex-shrink: 0; }
   .t-arrow { width: 14px; height: 14px; margin-right: 4px; transition: transform 0.2s; opacity: 0.7; }
   .t-node.collapsed .t-arrow { transform: rotate(-90deg); }
   .t-arrow.hidden { visibility: hidden; }
+  
   .c-folder { color: #fcd34d; } .c-def { color: #94a3b8; }
   .c-js { color: #f59e0b; } .c-ts { color: #3b82f6; } .c-html { color: #ef4444; } 
   .c-css { color: #06b6d4; } .c-json { color: #84cc16; } .c-md { color: #a855f7; } .c-img { color: #10b981; }
 
-  .t-meta { font-size: 11px; color: #64748b; margin-right: 12px; min-width: 50px; text-align: right; }
-  .t-comment { color: #10b981; font-style: italic; opacity: 0.6; min-width: 20px; border-bottom: 1px dashed transparent; }
-  .t-comment:hover, .t-comment:focus { opacity: 1; border-bottom-color: #10b981; }
+  .t-meta { font-size: 10px; color: #64748b; margin-right: 10px; min-width: 40px; text-align: right; }
+  .t-comment { color: #10b981; font-style: italic; opacity: 0.7; font-size: 12px; margin-left: 5px; min-width: 20px; border-bottom: 1px dashed transparent; }
+  .t-comment:focus { opacity: 1; border-bottom-color: #10b981; }
 
   /* LOADING & TOAST */
   .loading-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.95); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   .loading-overlay.active { opacity: 1; pointer-events: all; }
-  .spinner { width: 40px; height: 40px; border: 3px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1rem; }
+  .spinner { width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1rem; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  
-  .toast { position: fixed; bottom: 2rem; right: 2rem; background: #10b981; color: white; padding: 0.75rem 1.25rem; border-radius: 8px; transform: translateY(100px); transition: 0.3s; opacity: 0; z-index: 200; font-weight: 600; }
+  .toast { position: fixed; bottom: 2rem; right: 2rem; left: 2rem; text-align:center; background: #10b981; color: white; padding: 0.75rem 1.25rem; border-radius: 8px; transform: translateY(100px); transition: 0.3s; opacity: 0; z-index: 2000; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: auto; margin: 0 auto; max-width: 300px; }
   .toast.show { transform: translateY(0); opacity: 1; }
   #pick { display: none; }
 </style>
@@ -145,12 +161,10 @@
 <div class="container">
   <header>
     <div class="brand">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
       <h1>ProjectTree</h1>
     </div>
-    <div class="group">
-      <button class="btn" onclick="window.location.reload()">Reset</button>
-    </div>
+    <button class="btn" onclick="window.location.reload()">Reset</button>
   </header>
 
   <div class="card">
@@ -161,61 +175,51 @@
     </div>
 
     <div class="toolbar">
-      <div class="group">
-        <label for="pick" class="btn btn-primary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Select Folder
-        </label>
-        
+      <div class="group" style="flex:1">
         <div style="position: relative;">
           <button id="btnFilterToggle" class="btn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-            Filter Settings
+            Filters
           </button>
           
           <div id="filterPanel" class="filter-panel">
             <div class="fp-header">
               <span class="fp-title">Ignore Filters</span>
               <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:0.8rem;">Enabled</span>
-                <label class="toggle">
-                  <input type="checkbox" id="masterFilterToggle" checked>
-                  <span class="slider"></span>
-                </label>
+                <span style="font-size:0.8rem;">On/Off</span>
+                <label class="toggle"><input type="checkbox" id="masterFilterToggle" checked><span class="slider"></span></label>
               </div>
             </div>
+            <div id="filterGrid" class="filter-grid"></div>
+            <div style="border-top:1px solid #e2e8f0; margin:10px 0;"></div>
+            <div style="font-size:0.8rem; color:#64748b; margin-bottom:4px;">Manual Ignore (Blacklist):</div>
+            <input id="inpIgnore" type="text" placeholder="e.g. assets, *.log" style="width:100%" />
             
-            <div style="font-size:0.8rem; color:#64748b; margin-bottom:8px;">Common Folders to Ignore:</div>
-            <div id="filterGrid" class="filter-grid">
-              </div>
-            
-            <div class="divider" style="width:100%; height:1px; margin: 10px 0;"></div>
-            
-            <div style="font-size:0.8rem; color:#64748b; margin-bottom:4px;">Manual Custom Patterns:</div>
-            <input id="inpIgnore" type="text" placeholder="e.g. assets, secrets, *.log" style="width:100%" />
-            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Comma separated. Supports simple wildcards.</div>
+            <div style="margin-top:1rem; text-align:right; display:none;" id="mobileCloseWrapper">
+               <button class="btn btn-primary" style="width:100%; justify-content:center" onclick="document.getElementById('btnFilterToggle').click()">Done</button>
+            </div>
           </div>
         </div>
 
-        <select id="selStyle" class="btn">
-          <option value="unicode">Style: Unicode (├──)</option>
-          <option value="ascii">Style: ASCII (|--)</option>
+        <select id="selStyle" class="btn" style="max-width: 100px;">
+          <option value="unicode">Tree</option>
+          <option value="ascii">ASCII</option>
         </select>
         
-        <input id="inpExt" type="text" placeholder="Only Ext (e.g. .js,.py)" style="width:140px" />
+        <input id="inpExt" type="text" placeholder="Ext (.js)" style="width:80px" />
       </div>
 
-      <div class="group" style="margin-left:auto">
-        <button id="btnCopy" class="btn">📋 Copy</button>
+      <div class="group">
+        <button id="btnCopy" class="btn">📋</button>
         <button id="btnJson" class="btn">JSON</button>
-        <button id="btnImg" class="btn">PNG</button>
+        <button id="btnImg" class="btn">IMG</button>
       </div>
     </div>
 
     <div id="dropZone" class="drop-zone">
       <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-      <div style="font-weight:600; font-size:1.1rem">Drag & Drop Folder Here</div>
-      <div style="font-size:0.85rem; margin-top:0.5rem">Drop anywhere to update</div>
+      <div style="font-weight:600; font-size:1rem; color: var(--text)">Tap to Select Folder</div>
+      <div style="font-size:0.8rem; margin-top:0.4rem">or Drag & Drop</div>
     </div>
 
     <div id="treeContainer" class="tree-container"></div>
@@ -226,325 +230,171 @@
 <div id="toast" class="toast">Done!</div>
 
 <script>
-/* ================== CONFIG: EXPANDED DEFAULT IGNORE LIST ================== */
+/* CONFIG */
 const COMMON_IGNORES = [
-  // Dependencies & Environments
-  "node_modules", "bower_components", "jspm_packages", 
-  "venv", ".venv", "env", ".env", "__pycache__", ".tox",
-  "ruby_gem_home", ".bundle", "vendor",
-  
-  // Version Control
-  ".git", ".svn", ".hg", ".gitignore", ".gitattributes",
-  
-  // IDE & Editor Configs
-  ".vscode", ".idea", ".settings", ".project", ".classpath", "*.sublime-*",
-  
-  // Build, Dist, Output
-  "dist", "build", "out", "target", "bin", "obj", 
-  "coverage", ".next", ".nuxt", ".cache", ".parcel-cache",
-  
-  // Logs & Databases
-  "logs", "*.log", "npm-debug.log", "yarn-error.log", "*.sqlite", "*.db",
-  
-  // System / Misc
-  ".DS_Store", "Thumbs.db", "tmp", "temp", "secrets"
+  "node_modules", "bower_components", "venv", ".venv", "env", ".env", "__pycache__", ".tox", "vendor",
+  ".git", ".svn", ".hg", ".gitignore", ".vscode", ".idea", ".settings", ".project",
+  "dist", "build", "out", "target", "bin", "obj", "coverage", ".next", ".nuxt", ".cache",
+  "logs", "*.log", "*.sqlite", "*.db", ".DS_Store", "Thumbs.db", "tmp", "temp", "secrets"
 ];
 
-/* ================== STATE & DOM ================== */
-let fileStructure = {};
-let allFilesRef = []; // Store raw files for re-filtering without re-reading
-let activeFilters = new Set(COMMON_IGNORES); // Default active
+/* STATE */
+let allFilesRef = [];
+let activeFilters = new Set(COMMON_IGNORES);
 let isFilterEnabled = true;
 
 const els = {
-  pick: document.getElementById('pick'),
-  drop: document.getElementById('dropZone'),
-  tree: document.getElementById('treeContainer'),
-  ignoreInput: document.getElementById('inpIgnore'),
-  extInput: document.getElementById('inpExt'),
-  filterPanel: document.getElementById('filterPanel'),
-  filterGrid: document.getElementById('filterGrid'),
-  btnFilterToggle: document.getElementById('btnFilterToggle'),
-  masterFilterToggle: document.getElementById('masterFilterToggle'),
-  loading: document.getElementById('loading'),
+  pick: document.getElementById('pick'), drop: document.getElementById('dropZone'),
+  tree: document.getElementById('treeContainer'), ignoreInput: document.getElementById('inpIgnore'),
+  extInput: document.getElementById('inpExt'), filterPanel: document.getElementById('filterPanel'),
+  filterGrid: document.getElementById('filterGrid'), btnFilterToggle: document.getElementById('btnFilterToggle'),
+  masterFilterToggle: document.getElementById('masterFilterToggle'), loading: document.getElementById('loading'),
   loadingCount: document.getElementById('loadingCount')
 };
 
-/* ================== INIT ================== */
-// Render Checkboxes
+/* CHECK MOBILE */
+if(window.innerWidth <= 640) {
+  document.getElementById('mobileCloseWrapper').style.display = 'block';
+}
+
+/* INIT */
 function initFilters() {
   els.filterGrid.innerHTML = '';
   COMMON_IGNORES.sort().forEach(item => {
-    const label = document.createElement('label');
-    label.className = 'chk-label';
-    
-    const chk = document.createElement('input');
-    chk.type = 'checkbox';
-    chk.value = item;
-    chk.checked = true; // Default On
+    const label = document.createElement('label'); label.className = 'chk-label';
+    const chk = document.createElement('input'); chk.type = 'checkbox'; chk.value = item; chk.checked = true;
     chk.onchange = () => {
-      if(chk.checked) activeFilters.add(item);
-      else activeFilters.delete(item);
-      if(allFilesRef.length) processFiles(allFilesRef, true); // Re-process
+      if(chk.checked) activeFilters.add(item); else activeFilters.delete(item);
+      if(allFilesRef.length) processFiles(allFilesRef, true);
     };
-
-    label.appendChild(chk);
-    label.appendChild(document.createTextNode(item));
+    label.appendChild(chk); label.appendChild(document.createTextNode(item));
     els.filterGrid.appendChild(label);
   });
 }
 initFilters();
 
-// Event Listeners for Filters
-els.btnFilterToggle.onclick = (e) => {
-  e.stopPropagation();
-  els.filterPanel.classList.toggle('show');
-  els.btnFilterToggle.classList.toggle('active');
-};
-// Close panel when clicking outside
-document.addEventListener('click', (e) => {
-  if (!els.filterPanel.contains(e.target) && e.target !== els.btnFilterToggle) {
-    els.filterPanel.classList.remove('show');
-    els.btnFilterToggle.classList.remove('active');
-  }
-});
-
-// Master Toggle Logic
+/* EVENT LISTENERS */
+els.btnFilterToggle.onclick = (e) => { e.stopPropagation(); els.filterPanel.classList.toggle('show'); els.btnFilterToggle.classList.toggle('active'); };
+document.addEventListener('click', (e) => { if (!els.filterPanel.contains(e.target) && e.target !== els.btnFilterToggle) { els.filterPanel.classList.remove('show'); els.btnFilterToggle.classList.remove('active'); }});
 els.masterFilterToggle.onchange = () => {
   isFilterEnabled = els.masterFilterToggle.checked;
-  // Visual disable inputs
-  const inputs = els.filterPanel.querySelectorAll('input[type="checkbox"]:not(#masterFilterToggle), input[type="text"]');
-  inputs.forEach(i => i.disabled = !isFilterEnabled);
+  els.filterPanel.querySelectorAll('input:not(#masterFilterToggle)').forEach(i => i.disabled = !isFilterEnabled);
   els.filterGrid.style.opacity = isFilterEnabled ? "1" : "0.5";
-  
-  if(allFilesRef.length) processFiles(allFilesRef, true); // Re-process
-};
-
-// Custom Input Logic
-els.ignoreInput.oninput = () => {
   if(allFilesRef.length) processFiles(allFilesRef, true);
 };
-els.extInput.oninput = () => {
-  if(allFilesRef.length) processFiles(allFilesRef, true);
-};
+els.ignoreInput.oninput = () => { if(allFilesRef.length) processFiles(allFilesRef, true); };
+els.extInput.oninput = () => { if(allFilesRef.length) processFiles(allFilesRef, true); };
 
+els.drop.onclick = () => els.pick.click();
+els.pick.onchange = () => processFiles(Array.from(els.pick.files));
 
-/* ================== CORE LOGIC ================== */
+/* PROCESS LOGIC */
 async function processFiles(files, isReRun = false) {
   if (!files.length) return;
-  if (!isReRun) allFilesRef = files; // Save ref for live filtering
+  if (!isReRun) allFilesRef = files;
 
   els.loading.classList.add('active');
-  if(!isReRun) els.loadingCount.textContent = `Scanning ${files.length} files...`;
-  else els.loadingCount.textContent = `Applying filters...`;
-
-  await new Promise(r => setTimeout(r, 20)); // UI Yield
+  els.loadingCount.textContent = isReRun ? "Updating filters..." : `Scanning ${files.length} files...`;
+  await new Promise(r => setTimeout(r, 20));
 
   try {
-    fileStructure = {};
-    els.tree.innerHTML = '';
+    if(!isReRun) { els.drop.style.display = 'none'; els.tree.classList.add('show'); els.tree.innerHTML = ''; }
     
-    if(!isReRun) {
-      els.drop.style.display = 'none';
-      els.tree.classList.add('show');
-    }
-
-    // Prepare Filters
+    // Filters
     const customIgnore = els.ignoreInput.value.split(',').map(s=>s.trim()).filter(Boolean);
     const allowedExts = els.extInput.value.split(',').map(s=>s.trim()).filter(Boolean);
-
-    // .gitignore handling (only on first run or full re-scan, but simplifed here)
     const gitignore = files.find(f => f.name === ".gitignore");
     let gitIgnoreSet = new Set();
-    if(gitignore && isFilterEnabled) {
-      try {
-        const txt = await gitignore.text();
-        txt.split(/\r?\n/).forEach(l => {
-          l=l.trim(); if(l && !l.startsWith('#')) gitIgnoreSet.add(l.replace(/\/$/,''));
-        });
-      } catch(e){}
+    
+    if(gitignore && isFilterEnabled && !isReRun) {
+      try { const txt = await gitignore.text(); txt.split(/\r?\n/).forEach(l=>{ l=l.trim(); if(l&&!l.startsWith('#')) gitIgnoreSet.add(l.replace(/\/$/,'')); }); } catch(e){}
     }
 
-    // BUILD TREE
     const root = { name: "root", type: "folder", children: {}, size: 0, count: 0 };
-    
     const CHUNK = 3000;
+    
     for (let i = 0; i < files.length; i += CHUNK) {
       const chunk = files.slice(i, i+CHUNK);
-      if(!isReRun) els.loadingCount.textContent = `Processing ${Math.min(i+CHUNK, files.length)}...`;
-      if(i > 0) await new Promise(r => setTimeout(r, 0));
+      if(!isReRun && i>0) await new Promise(r => setTimeout(r, 0));
 
       for (const f of chunk) {
-        // FILTER LOGIC
         if (isFilterEnabled) {
           const parts = f.webkitRelativePath.split('/');
-          
-          // 1. Check Default Checklist & Custom Input & GitIgnore
-          const shouldIgnore = parts.some(p => {
-             // Exact match in active checkbox set
-             if(activeFilters.has(p)) return true;
-             // Match in custom input (simple wildcard support)
-             if(customIgnore.some(rule => {
-               if(rule.startsWith('*')) return p.endsWith(rule.slice(1));
-               return p === rule;
-             })) return true;
-             // Match .gitignore
-             if(gitIgnoreSet.has(p)) return true;
-             return false;
-          });
-
+          const shouldIgnore = parts.some(p => activeFilters.has(p) || customIgnore.some(r => r.startsWith('*')?p.endsWith(r.slice(1)):p===r) || gitIgnoreSet.has(p));
           if (shouldIgnore) continue;
         }
-
-        // 2. Check Extension
         if (allowedExts.length && !allowedExts.some(e => f.name.endsWith(e))) continue;
 
-        // Add to Tree
         let curr = root;
         const parts = f.webkitRelativePath.split('/');
         for (let j = 0; j < parts.length; j++) {
           const part = parts[j];
           const isFile = (j === parts.length - 1);
-          if (!curr.children[part]) {
-            curr.children[part] = {
-              name: part,
-              type: isFile ? "file" : "folder",
-              children: {},
-              size: isFile ? f.size : 0, count: 0
-            };
-          }
+          if (!curr.children[part]) curr.children[part] = { name: part, type: isFile?"file":"folder", children: {}, size: isFile?f.size:0, count: 0 };
           curr = curr.children[part];
         }
       }
     }
 
-    // Render
-    calcStats(root);
-    sortChildren(root);
-    fileStructure = root.children[Object.keys(root.children)[0]];
-    
-    if(!fileStructure) els.tree.innerHTML = '<div style="text-align:center;padding:2rem;color:#94a3b8">All files hidden by filters.</div>';
-    else renderTree(fileStructure);
+    calcStats(root); sortChildren(root);
+    const treeData = root.children[Object.keys(root.children)[0]];
+    els.tree.innerHTML = '';
+    if(!treeData) els.tree.innerHTML = '<div style="text-align:center;padding:2rem;color:#94a3b8">All files hidden by filters.</div>';
+    else els.tree.appendChild(createDOM(treeData));
 
   } catch(e) { console.error(e); } 
   finally { els.loading.classList.remove('active'); }
 }
 
-/* ================== HELPER FUNCS (Same as before) ================== */
-function calcStats(node) {
-  if(node.type === 'file') return;
-  let s=0, c=0;
-  for(let k in node.children){
-    calcStats(node.children[k]);
-    s += node.children[k].size;
-    c += (node.children[k].type==='file'?1:node.children[k].count);
-  }
-  node.size=s; node.count=c;
-}
-function sortChildren(node) {
-  if(node.type==='file') return;
-  const keys = Object.keys(node.children).sort((a,b)=>{
-    const A=node.children[a], B=node.children[b];
-    if(A.type!==B.type) return A.type==='folder'?-1:1;
-    return a.localeCompare(b);
-  });
-  const n={}; keys.forEach(k=>{n[k]=node.children[k];sortChildren(n[k])});
-  node.children=n;
-}
+function calcStats(n){ if(n.type==='file')return; let s=0,c=0; for(let k in n.children){ calcStats(n.children[k]); s+=n.children[k].size; c+=(n.children[k].type==='file'?1:n.children[k].count); } n.size=s; n.count=c; }
+function sortChildren(n){ if(n.type==='file')return; const k=Object.keys(n.children).sort((a,b)=>{const A=n.children[a],B=n.children[b]; return A.type!==B.type?(A.type==='folder'?-1:1):a.localeCompare(b);}); const o={}; k.forEach(x=>{o[x]=n.children[x];sortChildren(o[x])}); n.children=o; }
 
-/* ================== RENDER (SVG ICONS) ================== */
+/* RENDER */
 const ICONS = {
   arrow: `<svg class="t-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>`,
   folder: `<svg class="t-icon c-folder" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`,
   file: `<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`
 };
-
-function renderTree(data) { els.tree.innerHTML = ''; els.tree.appendChild(createDOM(data)); }
-function createDOM(node) {
-  const isFolder = node.type === 'folder';
-  const div = document.createElement('div'); div.className = 't-node';
-  const head = document.createElement('div'); head.className = 't-head';
+function createDOM(n) {
+  const isF = n.type === 'folder';
+  const d = document.createElement('div'); d.className = 't-node';
+  const h = document.createElement('div'); h.className = 't-head';
   
-  const arrow = document.createElement('span');
-  arrow.innerHTML = isFolder ? ICONS.arrow : `<div class="t-arrow hidden"></div>`;
-  if(isFolder) head.onclick = (e) => { if(!e.target.isContentEditable) div.classList.toggle('collapsed'); };
-  head.appendChild(arrow);
+  const arr = document.createElement('span'); arr.innerHTML = isF ? ICONS.arrow : `<div class="t-arrow hidden"></div>`;
+  if(isF) h.onclick = (e) => { if(!e.target.isContentEditable) d.classList.toggle('collapsed'); };
+  h.appendChild(arr);
 
-  const icon = document.createElement('span');
-  icon.innerHTML = isFolder ? ICONS.folder : ICONS.file;
-  if(!isFolder) {
-    const ext = node.name.split('.').pop().toLowerCase();
-    const c = {js:'c-js',ts:'c-ts',html:'c-html',css:'c-css',json:'c-json',md:'c-md',png:'c-img',jpg:'c-img'}[ext] || 'c-def';
-    icon.firstElementChild.classList.add(c);
-  }
-  head.appendChild(icon);
+  const ico = document.createElement('span'); ico.innerHTML = isF ? ICONS.folder : ICONS.file;
+  if(!isF) ico.firstElementChild.classList.add(({js:'c-js',ts:'c-ts',html:'c-html',css:'c-css',json:'c-json',md:'c-md',png:'c-img'}[n.name.split('.').pop().toLowerCase()]||'c-def'));
+  h.appendChild(ico);
 
-  const name = document.createElement('span'); name.textContent = node.name; name.className = 't-name';
-  head.appendChild(name);
+  const name = document.createElement('span'); name.textContent = n.name; name.className = 't-name'; h.appendChild(name);
+  const meta = document.createElement('span'); meta.className = 't-meta'; meta.textContent = isF ? `(${n.count})` : (n.size<1024?n.size+' B':(n.size/1024).toFixed(1)+' KB'); h.appendChild(meta);
+  const com = document.createElement('span'); com.className = 't-comment'; com.contentEditable = true; com.spellcheck = false; com.onclick = e=>e.stopPropagation(); h.appendChild(com);
 
-  const meta = document.createElement('span'); meta.className = 't-meta';
-  meta.textContent = isFolder ? `(${node.count})` : (node.size<1024 ? node.size+' B' : (node.size/1024).toFixed(1)+' KB');
-  head.appendChild(meta);
-  
-  const comment = document.createElement('span'); comment.className = 't-comment';
-  comment.contentEditable = true; comment.spellcheck = false;
-  comment.onclick = e => e.stopPropagation();
-  head.appendChild(comment);
-
-  div.appendChild(head);
-
-  if(isFolder) {
-    const childs = document.createElement('div'); childs.className = 't-children';
-    for(let k in node.children) childs.appendChild(createDOM(node.children[k]));
-    div.appendChild(childs);
-  }
-  return div;
+  d.appendChild(h);
+  if(isF) { const c = document.createElement('div'); c.className = 't-children'; for(let k in n.children) c.appendChild(createDOM(n.children[k])); d.appendChild(c); }
+  return d;
 }
 
-/* ================== GLOBAL DRAG ================== */
+/* GLOBAL DRAG */
 ['dragenter','dragover'].forEach(e=>document.body.addEventListener(e,ev=>{ev.preventDefault();document.body.classList.add('drag-active')}));
 ['dragleave','drop'].forEach(e=>document.body.addEventListener(e,ev=>{ev.preventDefault();if(e==='drop'||!ev.relatedTarget)document.body.classList.remove('drag-active')}));
-document.body.addEventListener('drop', ev=>{
-  if(ev.dataTransfer.files.length) processFiles(Array.from(ev.dataTransfer.files));
-});
-els.drop.onclick = () => els.pick.click();
-els.pick.onchange = () => processFiles(Array.from(els.pick.files));
+document.body.addEventListener('drop', ev=>{ if(ev.dataTransfer.files.length) processFiles(Array.from(ev.dataTransfer.files)); });
 
-/* ================== ACTIONS ================== */
-document.getElementById('btnCopy').onclick = () => {
-  if(!fileStructure.name) return;
-  const txt = domToText(els.tree.firstElementChild, "", true, document.getElementById('selStyle').value);
-  navigator.clipboard.writeText(txt);
-  showToast();
-};
-document.getElementById('btnJson').onclick = () => { if(fileStructure.name) download(JSON.stringify(fileStructure,null,2), 'tree.json'); };
-document.getElementById('btnImg').onclick = () => {
-  if(!fileStructure.name) return;
-  const t = els.tree;
-  html2canvas(t, {backgroundColor: "#1e293b", scale: 2, windowWidth: t.scrollWidth, height: t.scrollHeight}).then(c => {
-    const a = document.createElement('a'); a.download='tree.png'; a.href=c.toDataURL(); a.click();
-  });
-};
+/* ACTIONS */
+document.getElementById('btnCopy').onclick = () => { if(els.tree.firstChild) { navigator.clipboard.writeText(domToText(els.tree.firstChild,"",true,document.getElementById('selStyle').value)); els.toast.classList.add('show'); setTimeout(()=>els.toast.classList.remove('show'),2000); }};
+document.getElementById('btnJson').onclick = () => { if(fileStructure) { const a = document.createElement('a'); a.download = 'tree.json'; a.href = URL.createObjectURL(new Blob([JSON.stringify(fileStructure,null,2)], {type:'application/json'})); a.click(); } };
+document.getElementById('btnImg').onclick = () => { if(els.tree.firstChild) html2canvas(els.tree,{backgroundColor:"#1e293b",scale:2}).then(c=>{const a=document.createElement('a');a.download='tree.png';a.href=c.toDataURL();a.click()}); };
 
-function domToText(dom, pre, last, style) {
-  if(!dom) return "";
-  const name = dom.querySelector('.t-name').textContent;
-  const comm = dom.querySelector('.t-comment').textContent;
-  const chars = style==="unicode" ? {b:"├── ",l:"└── ",v:"│   ",s:"    "} : {b:"|-- ",l:"`-- ",v:"|   ",s:"    "};
-  let line = (pre===""&&last) ? name : pre + (last?chars.l:chars.b) + name;
-  if(comm) line += "  # " + comm;
-  line += "\n";
-  
-  const childs = dom.querySelector('.t-children');
-  if(childs && !dom.classList.contains('collapsed')) {
-    Array.from(childs.children).forEach((c,i,arr) => {
-      line += domToText(c, (pre===""&&last)?"":pre+(last?chars.s:chars.v), i===arr.length-1, style);
-    });
-  }
+function domToText(d,p,l,s){
+  if(!d)return""; const name=d.querySelector('.t-name').textContent, comm=d.querySelector('.t-comment').textContent;
+  const c = s==="unicode" ? {b:"├── ",l:"└── ",v:"│   ",s:"    "} : {b:"|-- ",l:"`-- ",v:"|   ",s:"    "};
+  let line = (p===""&&l)?name:p+(l?c.l:c.b)+name; if(comm)line+="  # "+comm; line+="\n";
+  const ch = d.querySelector('.t-children');
+  if(ch&&!d.classList.contains('collapsed')) Array.from(ch.children).forEach((x,i,arr)=>line+=domToText(x,(p===""&&l)?"":p+(l?c.s:c.v),i===arr.length-1,s));
   return line;
 }
-function download(c,n){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:'text/plain'}));a.download=n;a.click();}
-function showToast(){ els.toast.classList.add('show'); setTimeout(()=>els.toast.classList.remove('show'),2000); }
 </script>
 </body>
 </html>
