@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ProjectTree Ultimate v2</title>
+<title>ProjectTree Ultimate</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
   :root {
     --primary: #3b82f6;
     --primary-hover: #2563eb;
-    --bg: #f1f5f9;
+    --bg: #f8fafc;
     --surface: #ffffff;
     --border: #e2e8f0;
     --text: #334155;
@@ -23,40 +23,47 @@
   * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
   
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background-color: var(--bg);
     color: var(--text);
     padding: 2rem 1rem;
     line-height: 1.5;
-    min-height: 100vh; /* Agar bisa drop di mana saja */
+    min-height: 100vh;
+    transition: background-color 0.2s;
   }
+
+  /* Global Drag Overlay State */
+  body.drag-active { background-color: #eff6ff; }
+  body.drag-active .card { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+  body.drag-active .drop-zone { background: #dbeafe; border-color: var(--primary); color: var(--primary); }
 
   .container { max-width: 1100px; margin: 0 auto; position: relative; }
 
   /* --- HEADER --- */
   header { margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
   .brand { display: flex; align-items: center; gap: 12px; }
-  .brand h1 { font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+  .brand h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
   .brand-icon { width: 32px; height: 32px; color: var(--primary); }
 
   /* --- CARD --- */
   .card {
     background: var(--surface);
     border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     border: 1px solid var(--border);
     overflow: hidden;
     margin-bottom: 1.5rem;
-    position: relative; /* Untuk loading overlay */
+    position: relative;
     min-height: 300px;
+    transition: all 0.2s ease;
   }
 
   /* --- LOADING OVERLAY --- */
   .loading-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(2px);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(4px);
     z-index: 50;
     display: flex;
     flex-direction: column;
@@ -69,15 +76,15 @@
   .loading-overlay.active { opacity: 1; pointer-events: all; }
 
   .spinner {
-    width: 48px; height: 48px;
-    border: 4px solid #e2e8f0;
+    width: 40px; height: 40px;
+    border: 3px solid #e2e8f0;
     border-top-color: var(--primary);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
     margin-bottom: 1rem;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-weight: 600; color: var(--text); }
+  .loading-text { font-weight: 600; color: var(--text); font-size: 0.95rem; }
 
   /* --- TOOLBAR --- */
   .toolbar {
@@ -86,12 +93,12 @@
     background: #f8fafc;
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 10px;
     align-items: center;
   }
 
   .group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .divider { width: 1px; height: 24px; background: var(--border); margin: 0 8px; }
+  .divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
 
   input[type="text"], select {
     padding: 0.5rem 0.75rem;
@@ -100,8 +107,9 @@
     font-size: 0.875rem;
     color: var(--text);
     background: white;
+    transition: all 0.2s;
   }
-  input[type="text"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); }
+  input[type="text"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
 
   /* BUTTONS */
   .btn {
@@ -116,7 +124,7 @@
   .btn-primary:hover { background: var(--primary-hover); }
   .btn svg { width: 16px; height: 16px; }
 
-  /* --- DROP ZONE --- */
+  /* --- DROP ZONE (Initial State) --- */
   .drop-zone {
     border: 2px dashed #cbd5e1;
     border-radius: 8px;
@@ -128,10 +136,6 @@
     cursor: pointer;
     color: var(--text-muted);
   }
-  /* Global Drag State (on Body) */
-  body.drag-active .drop-zone { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
-  body.drag-active .card { border-color: var(--primary); }
-  
   .drop-zone-icon { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.5; }
 
   /* --- TREE VIEW (DOM) --- */
@@ -139,46 +143,53 @@
     background: var(--code-bg);
     color: var(--code-text);
     padding: 1.5rem;
-    font-family: "Fira Code", Consolas, monospace;
-    font-size: 14px;
+    font-family: "Fira Code", Consolas, Monaco, monospace;
+    font-size: 13.5px;
     overflow-x: auto;
     min-height: 400px;
     display: none; /* Hidden by default */
   }
   .tree-container.show { display: block; }
 
-  /* Tree Nodes Styling (Sama seperti sebelumnya) */
+  /* Node Styling */
   .t-node { display: block; }
   .t-head { display: flex; align-items: center; padding: 2px 0; cursor: pointer; user-select: none; }
   .t-head:hover { background: rgba(255,255,255,0.05); }
-  .indent { display: inline-block; width: 24px; height: 100%; border-right: 1px solid transparent; flex-shrink: 0; }
-  .indent.line { border-right-color: var(--line-color); }
-  .t-icon { width: 18px; height: 18px; margin-right: 8px; flex-shrink: 0; }
-  .t-arrow { width: 14px; height: 14px; margin-right: 4px; transition: transform 0.2s; color: var(--text-muted); }
+  
+  .indent { display: inline-block; width: 22px; height: 100%; border-right: 1px solid transparent; flex-shrink: 0; }
+  
+  .t-icon { width: 16px; height: 16px; margin-right: 8px; flex-shrink: 0; }
+  .t-arrow { width: 14px; height: 14px; margin-right: 4px; transition: transform 0.2s; color: var(--text-muted); opacity: 0.7; }
   .t-node.collapsed .t-arrow { transform: rotate(-90deg); }
   .t-arrow.hidden { visibility: hidden; }
-  .t-name { margin-right: 12px; }
-  .t-meta { font-size: 12px; color: #64748b; margin-right: 12px; }
-  .t-comment { color: #059669; font-style: italic; opacity: 0.7; border-bottom: 1px dashed transparent; min-width: 20px; }
-  .t-comment:hover, .t-comment:focus { opacity: 1; border-bottom-color: #059669; }
-  .t-comment:empty::before { content: "# click to add comment"; color: #475569; }
+  
+  .t-name { margin-right: 12px; white-space: nowrap; }
+  .t-meta { font-size: 11px; color: #64748b; margin-right: 12px; min-width: 50px; text-align: right; user-select: none; }
+  
+  .t-comment { color: #10b981; font-style: italic; opacity: 0.6; border-bottom: 1px dashed transparent; min-width: 20px; transition: opacity 0.2s; }
+  .t-comment:hover, .t-comment:focus { opacity: 1; border-bottom-color: #10b981; }
+  .t-comment:empty::before { content: "#"; color: #475569; opacity: 0.5; margin-left: 5px; }
   .t-comment:focus::before { content: ""; }
+
+  /* File Colors */
   .c-folder { color: #fcd34d; }
   .c-js { color: #f59e0b; } .c-ts { color: #3b82f6; }
   .c-html { color: #ef4444; } .c-css { color: #06b6d4; }
   .c-json { color: #84cc16; } .c-md { color: #a855f7; }
   .c-img { color: #10b981; } .c-def { color: #94a3b8; }
-  .t-children { margin-left: 0; padding-left: 22px; border-left: 1px solid var(--line-color); margin-left: 9px; }
+
+  /* Children Indentation */
+  .t-children { padding-left: 20px; border-left: 1px solid var(--line-color); margin-left: 8px; }
   .t-node.collapsed .t-children { display: none; }
 
-  /* Toast */
+  /* Toast Notification */
   .toast {
     position: fixed; bottom: 2rem; right: 2rem;
     background: #10b981; color: white;
-    padding: 0.75rem 1.5rem; border-radius: 8px;
+    padding: 0.75rem 1.25rem; border-radius: 8px;
     box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-    transform: translateY(100px); opacity: 0; transition: all 0.3s;
-    font-weight: 600; display: flex; align-items: center; gap: 8px; z-index: 99;
+    transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    font-weight: 500; display: flex; align-items: center; gap: 8px; z-index: 100;
   }
   .toast.show { transform: translateY(0); opacity: 1; }
 
@@ -205,7 +216,7 @@
   <div class="card">
     <div id="loading" class="loading-overlay">
       <div class="spinner"></div>
-      <div class="loading-text">Processing files...</div>
+      <div class="loading-text">Processing Project Files...</div>
       <div id="loadingCount" style="font-size:0.8rem; color:#64748b; margin-top:5px">Please wait</div>
     </div>
 
@@ -231,16 +242,16 @@
         <button id="btnImg" class="btn">PNG Image</button>
       </div>
       
-      <div style="width:100%; margin-top:10px" class="group">
-        <input id="inpIgnore" type="text" placeholder="Ignore (e.g. node_modules, .git)" style="flex:2" />
+      <div style="width:100%; margin-top:5px" class="group">
+        <input id="inpIgnore" type="text" placeholder="Ignore (e.g. node_modules, .git, dist)" style="flex:2" />
         <input id="inpExt" type="text" placeholder="Filter Ext (e.g. .js, .py)" style="flex:1" />
       </div>
     </div>
 
     <div id="dropZone" class="drop-zone">
       <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-      <div style="font-weight:600; color:var(--text)">Drag & Drop folder here</div>
-      <div style="font-size:0.8rem; margin-top:0.5rem">or drop anywhere on the page to update</div>
+      <div style="font-weight:600; color:var(--text); font-size:1.1rem">Drag & Drop Folder Here</div>
+      <div style="font-size:0.85rem; margin-top:0.5rem">or drop anywhere on the page to overwrite</div>
     </div>
 
     <div id="treeContainer" class="tree-container"></div>
@@ -255,7 +266,7 @@
 </div>
 
 <script>
-/* ================== ICONS ================== */
+/* ================== SVG ICONS ================== */
 const ICONS = {
   arrow: `<svg class="t-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>`,
   folder: `<svg class="t-icon c-folder" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`,
@@ -263,9 +274,9 @@ const ICONS = {
 };
 
 /* ================== CONFIG ================== */
-const DEFAULT_IGNORE = new Set(["node_modules",".git",".vscode",".idea","dist","build","__pycache__",".DS_Store"]);
+const DEFAULT_IGNORE = new Set(["node_modules",".git",".vscode",".idea","dist","build","__pycache__",".DS_Store","coverage"]);
 
-/* ================== STATE ================== */
+/* ================== STATE & ELEMENTS ================== */
 let fileStructure = {}; 
 const els = {
   pick: document.getElementById('pick'),
@@ -279,35 +290,34 @@ const els = {
   loadingCount: document.getElementById('loadingCount')
 };
 
-// Load Prefs
+// Load saved settings
 els.ignore.value = localStorage.getItem('pt_ignore') || "";
 els.ext.value = localStorage.getItem('pt_ext') || "";
 
 /* ================== CORE LOGIC ================== */
-
 async function processFiles(files) {
   if (!files.length) return;
 
-  // 1. SHOW LOADING & RESET UI
+  // 1. Loading UI
   els.loading.classList.add('active');
-  els.loadingCount.textContent = `Analyzing ${files.length} files...`;
+  els.loadingCount.textContent = `Queued ${files.length} files...`;
   
-  // Use setTimeout to allow UI to update (spinner to appear) before heavy processing
-  await new Promise(r => setTimeout(r, 50));
+  // Unblock UI thread for spinner to render
+  await new Promise(r => setTimeout(r, 80));
 
   try {
-    // 2. RESET STATE (Otomatis Timpa)
+    // 2. Reset UI
     fileStructure = {}; 
     els.tree.innerHTML = ''; 
-    els.drop.style.display = 'none'; // Hide dropzone
-    els.tree.classList.add('show');  // Show tree container
+    els.drop.style.display = 'none'; 
+    els.tree.classList.add('show');
 
-    // Prepare filters
+    // 3. Prepare Config
     const manualIgnore = els.ignore.value.split(',').map(s=>s.trim()).filter(Boolean);
     const ignoreSet = new Set([...DEFAULT_IGNORE, ...manualIgnore]);
     const allowedExts = els.ext.value.split(',').map(s=>s.trim()).filter(Boolean);
 
-    // Check .gitignore
+    // Read .gitignore if present
     const gitignore = files.find(f => f.name === ".gitignore");
     if(gitignore) {
       try {
@@ -319,57 +329,66 @@ async function processFiles(files) {
       } catch(e){}
     }
 
-    // Build Data Structure
+    // 4. Build Tree
     const root = { name: "root", type: "folder", children: {}, size: 0, count: 0 };
     
-    // BUILD LOOP
-    for (const f of files) {
-      const parts = f.webkitRelativePath.split('/');
-      if (parts.some(p => ignoreSet.has(p))) continue;
-      if (allowedExts.length && !allowedExts.some(e => f.name.endsWith(e))) continue;
+    // Chunk processing to keep UI responsive for huge folders
+    const CHUNK_SIZE = 2000;
+    for (let i = 0; i < files.length; i += CHUNK_SIZE) {
+      const chunk = files.slice(i, i + CHUNK_SIZE);
+      
+      // Update loading text
+      els.loadingCount.textContent = `Processing ${Math.min(i + CHUNK_SIZE, files.length)} / ${files.length}`;
+      if(i > 0) await new Promise(r => setTimeout(r, 0)); // Yield
 
-      let curr = root;
-      for (let i = 0; i < parts.length; i++) {
-        const part = parts[i];
-        const isFile = (i === parts.length - 1);
-        if (!curr.children[part]) {
-          curr.children[part] = {
-            name: part,
-            type: isFile ? "file" : "folder",
-            children: {},
-            size: isFile ? f.size : 0,
-            count: 0
-          };
+      for (const f of chunk) {
+        const parts = f.webkitRelativePath.split('/');
+        if (parts.some(p => ignoreSet.has(p))) continue;
+        if (allowedExts.length && !allowedExts.some(e => f.name.endsWith(e))) continue;
+
+        let curr = root;
+        for (let j = 0; j < parts.length; j++) {
+          const part = parts[j];
+          const isFile = (j === parts.length - 1);
+          if (!curr.children[part]) {
+            curr.children[part] = {
+              name: part,
+              type: isFile ? "file" : "folder",
+              children: {},
+              size: isFile ? f.size : 0,
+              count: 0
+            };
+          }
+          curr = curr.children[part];
         }
-        curr = curr.children[part];
       }
     }
 
-    // CALC & SORT
+    // 5. Calculate & Render
+    els.loadingCount.textContent = "Finalizing structure...";
+    await new Promise(r => setTimeout(r, 20));
+
     calcStats(root);
     sortChildren(root);
 
-    // RENDER
-    fileStructure = root.children[Object.keys(root.children)[0]]; // Un-nest
+    // Un-nest root wrapper
+    fileStructure = root.children[Object.keys(root.children)[0]]; 
     
     if(!fileStructure) {
-      // Case: Folder empty or all ignored
-      els.tree.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-muted)">No files found (check filters)</div>';
+      els.tree.innerHTML = '<div style="text-align:center; padding:3rem; color:var(--text-muted)">Files filtered out or folder empty.</div>';
     } else {
       renderTree(fileStructure);
     }
 
   } catch (err) {
     console.error(err);
-    alert("Error processing files");
+    alert("Error: " + err.message);
   } finally {
-    // 3. HIDE LOADING
     els.loading.classList.remove('active');
   }
 }
 
-// ... (Helper functions remain similar but optimized) ...
-
+/* ================== HELPERS ================== */
 function calcStats(node) {
   if (node.type === "file") return;
   let sumSize = 0;
@@ -396,12 +415,13 @@ function sortChildren(node) {
   node.children = newChildren;
 }
 
+/* ================== DOM RENDER ================== */
 function renderTree(data) {
   els.tree.innerHTML = '';
-  els.tree.appendChild(createNodeDOM(data, []));
+  els.tree.appendChild(createNodeDOM(data));
 }
 
-function createNodeDOM(node, indentLines) {
+function createNodeDOM(node) {
   const isFolder = node.type === 'folder';
   const div = document.createElement('div');
   div.className = 't-node';
@@ -409,35 +429,41 @@ function createNodeDOM(node, indentLines) {
   const head = document.createElement('div');
   head.className = 't-head';
   
-  // Header content logic (sama seperti sebelumnya)
+  // 1. Arrow
   const arrowWrapper = document.createElement('span');
   if (isFolder) {
     arrowWrapper.innerHTML = ICONS.arrow;
-    head.onclick = (e) => { if(!e.target.isContentEditable) div.classList.toggle('collapsed'); };
+    head.onclick = (e) => { 
+      if(!e.target.isContentEditable) div.classList.toggle('collapsed'); 
+    };
   } else {
     arrowWrapper.innerHTML = `<div class="t-arrow hidden"></div>`;
   }
   head.appendChild(arrowWrapper);
 
+  // 2. Icon
   const iconSpan = document.createElement('span');
   iconSpan.innerHTML = isFolder ? ICONS.folder : ICONS.file;
   if (!isFolder) {
     const ext = node.name.split('.').pop().toLowerCase();
-    const map = {js:'c-js',ts:'c-ts',html:'c-html',css:'c-css',json:'c-json',md:'c-md',png:'c-img',jpg:'c-img',jpeg:'c-img'};
+    const map = {js:'c-js',ts:'c-ts',jsx:'c-js',tsx:'c-ts',html:'c-html',css:'c-css',scss:'c-css',json:'c-json',md:'c-md',png:'c-img',jpg:'c-img',svg:'c-img'};
     iconSpan.firstElementChild.classList.add(map[ext] || 'c-def');
   }
   head.appendChild(iconSpan);
 
+  // 3. Name
   const nameSpan = document.createElement('span');
   nameSpan.className = 't-name';
   nameSpan.textContent = node.name;
   head.appendChild(nameSpan);
 
+  // 4. Meta
   const metaSpan = document.createElement('span');
   metaSpan.className = 't-meta';
   metaSpan.textContent = isFolder ? `(${node.count})` : formatBytes(node.size);
   head.appendChild(metaSpan);
 
+  // 5. Comment
   const commentSpan = document.createElement('span');
   commentSpan.className = 't-comment';
   commentSpan.contentEditable = true;
@@ -447,11 +473,12 @@ function createNodeDOM(node, indentLines) {
 
   div.appendChild(head);
 
+  // 6. Children
   if (isFolder) {
     const childrenContainer = document.createElement('div');
     childrenContainer.className = 't-children';
     Object.keys(node.children).forEach(key => {
-      childrenContainer.appendChild(createNodeDOM(node.children[key], []));
+      childrenContainer.appendChild(createNodeDOM(node.children[key]));
     });
     div.appendChild(childrenContainer);
   }
@@ -459,60 +486,57 @@ function createNodeDOM(node, indentLines) {
   return div;
 }
 
-/* ================== EVENT LISTENERS (GLOBAL DROP) ================== */
-
-// Attach Drag & Drop to BODY so you can drop anywhere to overwrite
-['dragenter', 'dragover'].forEach(eventName => {
-  document.body.addEventListener(eventName, e => {
-    e.preventDefault();
+/* ================== GLOBAL DRAG & DROP ================== */
+['dragenter', 'dragover'].forEach(e => {
+  document.body.addEventListener(e, ev => {
+    ev.preventDefault();
     document.body.classList.add('drag-active');
   }, false);
 });
-
-['dragleave', 'drop'].forEach(eventName => {
-  document.body.addEventListener(eventName, e => {
-    e.preventDefault();
-    // Only remove class if we are leaving the window or dropping
-    if(eventName === 'drop' || (e.relatedTarget === null)) {
+['dragleave', 'drop'].forEach(e => {
+  document.body.addEventListener(e, ev => {
+    ev.preventDefault();
+    if(e === 'drop' || (ev.relatedTarget === null)) {
       document.body.classList.remove('drag-active');
     }
   }, false);
 });
-
-document.body.addEventListener('drop', e => {
-  const dt = e.dataTransfer;
-  if(dt && dt.files && dt.files.length) {
-    processFiles(Array.from(dt.files));
-  }
+document.body.addEventListener('drop', ev => {
+  const dt = ev.dataTransfer;
+  if(dt && dt.files && dt.files.length) processFiles(Array.from(dt.files));
 });
 
+/* ================== EXPORT & ACTIONS ================== */
 els.drop.onclick = () => els.pick.click();
 els.pick.onchange = () => processFiles(Array.from(els.pick.files));
 
-// Buttons
 document.getElementById('btnCopy').onclick = () => {
   if(!fileStructure.name) return;
   const style = els.selStyle.value;
   const text = domToText(els.tree.firstElementChild, "", true, style);
   navigator.clipboard.writeText(text);
-  showToast("Copied to clipboard!");
+  showToast("Structure copied to clipboard!");
 };
 
 document.getElementById('btnJson').onclick = () => {
   if(!fileStructure.name) return;
-  download(JSON.stringify(fileStructure, null, 2), "tree.json", "application/json");
+  download(JSON.stringify(fileStructure, null, 2), "project-tree.json", "application/json");
 };
 
 document.getElementById('btnImg').onclick = () => {
   if(!fileStructure.name) return;
-  showToast("Generating Image...");
-  html2canvas(els.tree, { backgroundColor: "#1e293b", scale: 2 }).then(canvas => {
+  showToast("Rendering Image...");
+  html2canvas(els.tree, { 
+    backgroundColor: "#1e293b", 
+    scale: 2,
+    windowWidth: els.tree.scrollWidth 
+  }).then(canvas => {
     const a = document.createElement('a');
-    a.download = 'tree.png'; a.href = canvas.toDataURL(); a.click();
+    a.download = 'project-tree.png'; a.href = canvas.toDataURL(); a.click();
   });
 };
 
-/* ================== UTILS ================== */
+// Recursive text builder
 function domToText(domNode, prefix, isLast, style) {
   if(!domNode) return "";
   const head = domNode.querySelector('.t-head');
